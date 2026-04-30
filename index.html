@@ -9,6 +9,13 @@
 
 <style>
 body { background:#111; color:white; font-family:Arial; text-align:center; margin:0; padding:15px; }
+h1 { margin-top:5px; }
+.tabs { display:flex; gap:8px; justify-content:center; position:sticky; top:0; background:#111; padding:10px 0; z-index:10; }
+.tabs button { background:#222; color:white; border:1px solid #333; }
+.tabs button.activo { background:#3498db; color:white; }
+.tab { display:none; }
+.tab.activa { display:block; }
+
 .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-width:760px; margin:20px auto; }
 .day { background:#1e1e1e; padding:8px; border-radius:8px; cursor:pointer; font-size:12px; min-height:86px; }
 .day:hover { background:#333; }
@@ -21,8 +28,9 @@ body { background:#111; color:white; font-family:Arial; text-align:center; margi
 .raro { border:2px solid yellow !important; }
 .estimado { opacity:0.55; }
 .futuro { opacity:0.35; }
+
 .panel, .bloque, .top { background:#1e1e1e; padding:15px; margin:15px auto; max-width:660px; border-radius:10px; }
-button { margin:5px; padding:9px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
+button { margin:5px; padding:10px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
 .entrar { background:#2ecc71; }
 .salir { background:#e74c3c; }
 .guardar { background:#3498db; color:white; }
@@ -30,12 +38,15 @@ button { margin:5px; padding:9px 12px; border:none; border-radius:6px; cursor:po
 .backup { background:#9b59b6; color:white; }
 .csv { background:#f39c12; color:white; }
 .config { background:#16a085; color:white; }
-input, select { margin:5px; padding:7px; border-radius:6px; border:none; }
+input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-width:90%; }
 .small { font-size:12px; color:#bbb; }
 .saldo { font-size:12px; margin-top:4px; }
 .real { color:#2ecc71; }
 .plan { color:#aaa; }
 .alerta { color:orange; font-weight:bold; }
+
+.resumenGrande { font-size:18px; line-height:1.7; }
+.accionesRapidas button { font-size:16px; padding:14px 18px; }
 </style>
 </head>
 
@@ -43,80 +54,103 @@ input, select { margin:5px; padding:7px; border-radius:6px; border:none; }
 
 <h1>Mis Horas</h1>
 
-<div class="top">
-    <button class="entrar" onclick="marcarEntrada()">ENTRAR REAL</button>
-    <button class="salir" onclick="marcarSalida()">SALIR REAL</button>
-
-    <div id="estado"></div>
-    <div id="resumenMes"></div>
-    <div id="saldoTotal"></div>
-
-    <hr>
-
-    <button class="backup" onclick="exportarJSON()">Exportar backup</button>
-    <button class="backup" onclick="importarJSON()">Importar backup</button>
-    <button class="csv" onclick="exportarCSV()">Exportar Excel CSV</button>
-
-    <input type="file" id="fileInput" accept=".json" style="display:none">
+<div class="tabs">
+    <button id="btn-inicio" onclick="cambiarTab('inicio')">Inicio</button>
+    <button id="btn-calendario" onclick="cambiarTab('calendario')">Calendario</button>
+    <button id="btn-config" onclick="cambiarTab('config')">Config</button>
 </div>
 
-<div class="panel">
-<h2>Configuración de jornada</h2>
+<div id="tab-inicio" class="tab activa">
+    <div class="top">
+        <div class="accionesRapidas">
+            <button class="entrar" onclick="marcarEntrada()">ENTRAR REAL</button>
+            <button class="salir" onclick="marcarSalida()">SALIR REAL</button>
+        </div>
 
-Lunes-Jueves entrada: <input id="cfgEntradaLJ" placeholder="08:00"><br>
-Lunes-Jueves salida: <input id="cfgSalidaLJ" placeholder="17:00"><br>
+        <hr>
 
-Viernes entrada: <input id="cfgEntradaV" placeholder="08:00"><br>
-Viernes salida: <input id="cfgSalidaV" placeholder="14:00"><br>
+        <div id="estado" class="resumenGrande"></div>
+        <div id="resumenMes"></div>
+        <div id="saldoTotal"></div>
+    </div>
 
-Descanso automático si se superan 6h:
-<input id="cfgDescanso" type="number" placeholder="30"> minutos<br>
-
-<button class="config" onclick="guardarConfig()">Guardar configuración</button>
-<button class="config" onclick="aplicarConfigMes()">Aplicar configuración al mes visible</button>
-
-<div class="small">
-Modo cómodo: si falta una hora real en días ya vencidos, se usa la planificación, pero el día se marca como estimado.
-</div>
-</div>
-
-<div class="bloque">
-<h2>Aplicar por bloque</h2>
-
-Desde: <input type="date" id="bloqueDesde"><br>
-Hasta: <input type="date" id="bloqueHasta"><br>
-
-Tipo:
-<select id="bloqueTipo">
-<option value="normal">Normal</option>
-<option value="vacaciones">Vacaciones</option>
-<option value="baja">Baja</option>
-<option value="festivo">Festivo</option>
-</select><br>
-
-Entrada planificada: <input id="bloqueEntradaPlan" placeholder="08:00"><br>
-Salida planificada: <input id="bloqueSalidaPlan" placeholder="17:00"><br>
-
-Modo:
-<select id="bloqueModo">
-<option value="sobrescribir">Sobrescribir</option>
-<option value="vacios">Solo días vacíos</option>
-<option value="plan">Solo cambiar planificación</option>
-</select><br>
-
-<button onclick="aplicarBloque()">Aplicar bloque</button>
-<button onclick="generarMes()">Generar mes automático</button>
+    <div class="panel">
+        <h2>Lectura rápida</h2>
+        <div class="small">
+            Verde = dato real. Gris = dato planificado. ⚠️ = dato estimado vencido.
+        </div>
+    </div>
 </div>
 
-<div>
-<button onclick="cambiarMes(-1)">◀</button>
-<span id="mes"></span>
-<button onclick="cambiarMes(1)">▶</button>
+<div id="tab-calendario" class="tab">
+    <div>
+        <button onclick="cambiarMes(-1)">◀</button>
+        <span id="mes"></span>
+        <button onclick="cambiarMes(1)">▶</button>
+    </div>
+
+    <div class="calendar" id="calendar"></div>
+
+    <div class="panel" id="panel">Pulsa un día para verlo o modificarlo.</div>
 </div>
 
-<div class="calendar" id="calendar"></div>
+<div id="tab-config" class="tab">
+    <div class="panel">
+        <h2>Configuración de jornada</h2>
 
-<div class="panel" id="panel">Pulsa un día para verlo o modificarlo.</div>
+        Lunes-Jueves entrada: <input id="cfgEntradaLJ" placeholder="08:00"><br>
+        Lunes-Jueves salida: <input id="cfgSalidaLJ" placeholder="17:00"><br>
+
+        Viernes entrada: <input id="cfgEntradaV" placeholder="08:00"><br>
+        Viernes salida: <input id="cfgSalidaV" placeholder="14:00"><br>
+
+        Descanso automático si se superan 6h:
+        <input id="cfgDescanso" type="number" placeholder="30"> minutos<br>
+
+        <button class="config" onclick="guardarConfig()">Guardar configuración</button>
+        <button class="config" onclick="aplicarConfigMes()">Aplicar configuración al mes visible</button>
+
+        <div class="small">
+        Modo cómodo: si falta una hora real en días ya vencidos, se usa la planificación, pero el día se marca como estimado.
+        </div>
+    </div>
+
+    <div class="bloque">
+        <h2>Aplicar por bloque</h2>
+
+        Desde: <input type="date" id="bloqueDesde"><br>
+        Hasta: <input type="date" id="bloqueHasta"><br>
+
+        Tipo:
+        <select id="bloqueTipo">
+            <option value="normal">Normal</option>
+            <option value="vacaciones">Vacaciones</option>
+            <option value="baja">Baja</option>
+            <option value="festivo">Festivo</option>
+        </select><br>
+
+        Entrada planificada: <input id="bloqueEntradaPlan" placeholder="08:00"><br>
+        Salida planificada: <input id="bloqueSalidaPlan" placeholder="17:00"><br>
+
+        Modo:
+        <select id="bloqueModo">
+            <option value="sobrescribir">Sobrescribir</option>
+            <option value="vacios">Solo días vacíos</option>
+            <option value="plan">Solo cambiar planificación</option>
+        </select><br>
+
+        <button onclick="aplicarBloque()">Aplicar bloque</button>
+        <button onclick="generarMes()">Generar mes automático</button>
+    </div>
+
+    <div class="panel">
+        <h2>Datos</h2>
+        <button class="backup" onclick="exportarJSON()">Exportar backup</button>
+        <button class="backup" onclick="importarJSON()">Importar backup</button>
+        <button class="csv" onclick="exportarCSV()">Exportar Excel CSV</button>
+        <input type="file" id="fileInput" accept=".json" style="display:none">
+    </div>
+</div>
 
 <script>
 let config = JSON.parse(localStorage.getItem("config_horas")) || {
@@ -128,6 +162,7 @@ let config = JSON.parse(localStorage.getItem("config_horas")) || {
 };
 
 let data =
+    JSON.parse(localStorage.getItem("horas_v8")) ||
     JSON.parse(localStorage.getItem("horas_v7")) ||
     JSON.parse(localStorage.getItem("horas_v6")) ||
     JSON.parse(localStorage.getItem("horas_v5")) ||
@@ -139,8 +174,18 @@ let data =
 let fechaActual = new Date();
 let seleccion = null;
 
+function cambiarTab(tab){
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("activa"));
+    document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("activo"));
+
+    document.getElementById("tab-"+tab).classList.add("activa");
+    document.getElementById("btn-"+tab).classList.add("activo");
+
+    render();
+}
+
 function guardar(){
-    localStorage.setItem("horas_v7", JSON.stringify(data));
+    localStorage.setItem("horas_v8", JSON.stringify(data));
     localStorage.setItem("config_horas", JSON.stringify(config));
 }
 
@@ -534,6 +579,7 @@ function cambiarMes(n){
 }
 
 function abrirDia(fecha){
+    cambiarTab("calendario");
     seleccion=fecha;
     let d=obtenerDia(fecha,true);
 
@@ -677,7 +723,7 @@ function estadoHoy(){
 
 function exportarJSON(){
     let paquete = {
-        version:"mis_horas_v7",
+        version:"mis_horas_v8_tabs",
         fechaExportacion:new Date().toISOString(),
         config:config,
         data:data
@@ -826,6 +872,7 @@ function render(){
 }
 
 cargarConfigUI();
+cambiarTab("inicio");
 render();
 </script>
 
