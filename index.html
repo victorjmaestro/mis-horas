@@ -67,9 +67,15 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
             <button class="salir" onclick="marcarSalida()">SALIR REAL</button>
         </div>
 
+        <div class="accionesRapidas">
+            <button class="guardar" onclick="editarHoy()">Editar hoy</button>
+            <button class="guardar" onclick="editarAyer()">Editar ayer</button>
+        </div>
+
         <hr>
 
         <div id="estado" class="resumenGrande"></div>
+        <div id="resumenSemana"></div>
         <div id="resumenMes"></div>
         <div id="saldoTotal"></div>
     </div>
@@ -680,6 +686,69 @@ function eliminarDia(){
     document.getElementById("panel").innerHTML="Día eliminado.";
 }
 
+
+function lunesSemanaActual(){
+    let hoy = new Date();
+    let dia = hoy.getDay();
+    let diff = dia === 0 ? -6 : 1 - dia;
+    let lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() + diff);
+    lunes.setHours(12,0,0,0);
+    return lunes;
+}
+
+function saldoSemanaActual(){
+    let lunes = lunesSemanaActual();
+    let total = 0;
+
+    for(let i=0;i<7;i++){
+        let fechaObj = new Date(lunes);
+        fechaObj.setDate(lunes.getDate()+i);
+        let fecha = fechaLocalStr(fechaObj);
+        let d = obtenerDia(fecha,false);
+        let s = saldo(d);
+        if(s!=null) total += s;
+    }
+
+    return total;
+}
+
+function estimadosSemanaActual(){
+    let lunes = lunesSemanaActual();
+    let total = 0;
+
+    for(let i=0;i<7;i++){
+        let fechaObj = new Date(lunes);
+        fechaObj.setDate(lunes.getDate()+i);
+        let fecha = fechaLocalStr(fechaObj);
+        let d = obtenerDia(fecha,false);
+        if(diaEstimado(d)) total++;
+    }
+
+    return total;
+}
+
+function editarHoy(){
+    abrirDia(hoyStr());
+}
+
+function editarAyer(){
+    let ayer = new Date();
+    ayer.setDate(ayer.getDate()-1);
+    abrirDia(fechaLocalStr(ayer));
+}
+
+function resumenSemana(){
+    let texto = "Saldo semana: " + formatMin(saldoSemanaActual());
+    let est = estimadosSemanaActual();
+
+    if(est > 0){
+        texto += "<br><span class='alerta'>⚠️ Hay " + est + " día(s) estimado(s) vencido(s) esta semana</span>";
+    }
+
+    document.getElementById("resumenSemana").innerHTML = texto;
+}
+
 function resumenMes(){
     let mes=fechaActual.getMonth();
     let año=fechaActual.getFullYear();
@@ -723,7 +792,7 @@ function estadoHoy(){
 
 function exportarJSON(){
     let paquete = {
-        version:"mis_horas_v8_tabs",
+        version:"mis_horas_v9_inicio",
         fechaExportacion:new Date().toISOString(),
         config:config,
         data:data
@@ -865,6 +934,7 @@ function render(){
         cal.appendChild(div);
     }
 
+    resumenSemana();
     resumenMes();
 
     document.getElementById("saldoTotal").innerText =
