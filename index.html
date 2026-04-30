@@ -117,7 +117,7 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
         <button class="config" onclick="aplicarConfigMes()">Aplicar configuración al mes visible</button>
 
         <div class="small">
-        Modo cómodo: si falta una hora real en días ya vencidos, se usa la planificación, pero el día se marca como estimado.
+        Modo normal: la planificación es el valor base. Las horas reales son solo correcciones.
         </div>
     </div>
 
@@ -393,31 +393,23 @@ function saldoTotal(){
 function diaIncompleto(d){
     if(esFuturo(d.fecha)) return false;
     if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
-    return d.tipo==="normal" && d.entradaReal && !d.salidaReal;
+    if(d.tipo!=="normal") return false;
+
+    return !entradaEfectiva(d) || !salidaEfectiva(d);
 }
 
 function diaRaro(d){
-    if(esFuturo(d.fecha)) return false;
-    if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
-    return d.tipo==="normal" && !d.entradaReal && d.salidaReal;
+    return false;
 }
 
 function diaEstimado(d){
-    if(d.tipo!=="normal") return false;
     if(esFuturo(d.fecha)) return false;
+    if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
+    if(d.tipo!=="normal") return false;
 
-    if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)){
-        return false;
-    }
-
-    let er = d.entradaReal;
-    let sr = d.salidaReal;
-
-    if(!er && !sr) return true;
-    if(er && !sr) return true;
-    if(!er && sr) return true;
-
-    return false;
+    // Ya NO se considera estimado por no tener real.
+    // Solo se marca si falta algún dato efectivo: ni real ni planificado.
+    return !entradaEfectiva(d) || !salidaEfectiva(d);
 }
 
 function hayEstimadosMes(){
@@ -596,11 +588,11 @@ function abrirDia(fecha){
     } else if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)){
         aviso = `<div class="small">Hoy todavía no ha terminado la jornada planificada. No se considera error.</div>`;
     } else if(diaIncompleto(d)){
-        aviso = `<div class="alerta">⚠️ Falta la salida real. Se está usando la salida planificada.</div>`;
+        aviso = `<div class="alerta">⚠️ Falta entrada o salida. No hay dato real ni planificado suficiente.</div>`;
     } else if(diaRaro(d)){
-        aviso = `<div class="alerta">⚠️ Hay salida real pero falta entrada real. Se está usando la entrada planificada.</div>`;
+        aviso = `<div class="alerta">⚠️ Falta entrada o salida. No hay dato real ni planificado suficiente.</div>`;
     } else if(diaEstimado(d)){
-        aviso = `<div class="alerta">⚠️ Día estimado: se está usando la planificación.</div>`;
+        aviso = `<div class="alerta">⚠️ Día incompleto: falta planificación o corrección real.</div>`;
     }
 
     document.getElementById("panel").innerHTML=`
@@ -619,13 +611,15 @@ function abrirDia(fecha){
         Entrada planificada: <input id="entradaPlan" value="${d.entradaPlan||""}" placeholder="08:00"><br>
         Salida planificada: <input id="salidaPlan" value="${d.salidaPlan||""}" placeholder="17:00"><br>
 
-        <h3>Real</h3>
-        Entrada real: <input id="entradaReal" value="${d.entradaReal||""}" placeholder="08:10"><br>
-        Salida real: <input id="salidaReal" value="${d.salidaReal||""}" placeholder="16:55"><br>
+        <h3>Real opcional</h3>
+        Entrada real: <input id="entradaReal" value="${d.entradaReal||""}" placeholder="Déjalo vacío para usar plan"><br>
+        Salida real: <input id="salidaReal" value="${d.salidaReal||""}" placeholder="Déjalo vacío para usar plan"><br>
 
         <div class="small">
-        Si dejas vacío el dato real en un día vencido, se usa el planificado y queda marcado como estimado.
+        No estás obligado a meter horas reales. Si lo dejas vacío, se usa la planificación como horario válido. Solo se avisa si falta planificación y tampoco hay dato real.
         </div>
+
+        <button class="config" onclick="usarPlanificacionDia()">Borrar corrección real y usar planificación</button>
 
         <br>
         Objetivo: ${formatMin(objetivo(d))}<br>
@@ -637,6 +631,20 @@ function abrirDia(fecha){
     `;
 
     document.getElementById("tipoDia").value=d.tipo;
+}
+
+
+function usarPlanificacionDia(){
+    let d=obtenerDia(seleccion,true);
+
+    d.entradaReal=null;
+    d.salidaReal=null;
+
+    guardar();
+    render();
+    abrirDia(seleccion);
+
+    alert("Día dejado con planificación automática.");
 }
 
 function guardarDia(){
@@ -743,7 +751,7 @@ function resumenSemana(){
     let est = estimadosSemanaActual();
 
     if(est > 0){
-        texto += "<br><span class='alerta'>⚠️ Hay " + est + " día(s) estimado(s) vencido(s) esta semana</span>";
+        texto += "<br><span class='alerta'>⚠️ Hay " + est + " día(s) incompleto(s) esta semana</span>";
     }
 
     document.getElementById("resumenSemana").innerHTML = texto;
@@ -764,7 +772,7 @@ function resumenMes(){
     let texto = "Saldo mes: " + formatMin(total);
 
     if(hayEstimadosMes()){
-        texto += "<br><span class='alerta'>⚠️ Hay " + contarEstimadosMes() + " día(s) estimado(s) vencido(s) este mes</span>";
+        texto += "<br><span class='alerta'>⚠️ Hay " + contarEstimadosMes() + " día(s) incompleto(s) este mes</span>";
     }
 
     document.getElementById("resumenMes").innerHTML = texto;
@@ -780,7 +788,7 @@ function estadoHoy(){
 
     let aviso = "";
     if(diaEstimado(d)){
-        aviso = "<br><span class='alerta'>⚠️ Hoy ya debería estar completo y tiene datos estimados</span>";
+        aviso = "<br><span class='alerta'>⚠️ Hoy ya debería estar completo y falta planificación o dato real</span>";
     }
 
     return `
@@ -792,7 +800,7 @@ function estadoHoy(){
 
 function exportarJSON(){
     let paquete = {
-        version:"mis_horas_v9_inicio",
+        version:"mis_horas_v11_plan_base",
         fechaExportacion:new Date().toISOString(),
         config:config,
         data:data
@@ -844,7 +852,7 @@ function exportarCSV(){
     let ordenado = [...data].sort((a,b)=>a.fecha.localeCompare(b.fecha));
 
     let filas=[
-        ["Fecha","Tipo","Entrada Plan","Salida Plan","Entrada Real","Salida Real","Objetivo min","Trabajado min","Saldo min","Objetivo","Trabajado","Saldo","Estimado vencido"]
+        ["Fecha","Tipo","Entrada Plan","Salida Plan","Entrada Real","Salida Real","Objetivo min","Trabajado min","Saldo min","Objetivo","Trabajado","Saldo","Incompleto"]
     ];
 
     ordenado.forEach(d=>{
