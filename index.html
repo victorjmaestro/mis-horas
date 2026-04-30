@@ -28,11 +28,14 @@ h1 { margin-top:5px; }
 .raro { border:2px solid yellow !important; }
 .estimado { opacity:0.55; }
 .futuro { opacity:0.35; }
+.noLaborable { opacity:0.35; }
 
 .panel, .bloque, .top { background:#1e1e1e; padding:15px; margin:15px auto; max-width:660px; border-radius:10px; }
+.editorOculto { display:none; }
 button { margin:5px; padding:10px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
 .entrar { background:#2ecc71; }
 .salir { background:#e74c3c; }
+.marcado { box-shadow:0 0 0 3px white inset; filter:brightness(1.15); }
 .guardar { background:#3498db; color:white; }
 .eliminar { background:#777; color:white; }
 .backup { background:#9b59b6; color:white; }
@@ -63,8 +66,8 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
 <div id="tab-inicio" class="tab activa">
     <div class="top">
         <div class="accionesRapidas">
-            <button class="entrar" onclick="marcarEntrada()">ENTRAR REAL</button>
-            <button class="salir" onclick="marcarSalida()">SALIR REAL</button>
+            <button id="btnEntradaReal" class="entrar" onclick="marcarEntrada()">ENTRAR REAL</button>
+            <button id="btnSalidaReal" class="salir" onclick="marcarSalida()">SALIR REAL</button>
         </div>
 
         <div class="accionesRapidas">
@@ -77,7 +80,6 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
         <div id="estado" class="resumenGrande"></div>
         <div id="resumenSemana"></div>
         <div id="resumenMes"></div>
-        <div id="saldoTotal"></div>
     </div>
 
     <div class="panel">
@@ -97,7 +99,7 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
 
     <div class="calendar" id="calendar"></div>
 
-    <div class="panel" id="panel">Pulsa un día para verlo o modificarlo.</div>
+    <div class="panel editorOculto" id="panel"></div>
 </div>
 
 <div id="tab-config" class="tab">
@@ -117,7 +119,7 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
         <button class="config" onclick="aplicarConfigMes()">Aplicar configuración al mes visible</button>
 
         <div class="small">
-        Modo normal: la planificación es el valor base. Las horas reales son solo correcciones.
+        Modo normal: la planificación es el valor base. Las horas reales son solo correcciones. Los días sin planificación no cuentan como laborables.
         </div>
     </div>
 
@@ -362,21 +364,41 @@ function calcularMinutos(entrada, salida, fecha){
     return total;
 }
 
+function esLaborable(d){
+    if(d.tipo!=="normal") return false;
+    return !!(d.entradaPlan || d.salidaPlan || d.entradaReal || d.salidaReal);
+}
+
 function trabajado(d){
     if(d.tipo!=="normal") return 0;
-    return calcularMinutos(entradaEfectiva(d), salidaEfectiva(d), d.fecha);
+
+    if(!esLaborable(d)) return 0;
+
+    let e = entradaEfectiva(d);
+    let s = salidaEfectiva(d);
+
+    if(!e || !s) return null;
+
+    return calcularMinutos(e, s, d.fecha);
 }
 
 function objetivo(d){
     if(d.tipo!=="normal") return 0;
+
+    if(!d.entradaPlan && !d.salidaPlan) return 0;
+    if(!d.entradaPlan || !d.salidaPlan) return null;
+
     let total = calcularMinutos(d.entradaPlan, d.salidaPlan, d.fecha);
-    return total ?? 0;
+    return total ?? null;
 }
 
 function saldo(d){
     let t=trabajado(d);
-    if(t==null) return null;
-    return t-objetivo(d);
+    let o=objetivo(d);
+
+    if(t==null || o==null) return null;
+
+    return t-o;
 }
 
 function saldoTotal(){
@@ -395,6 +417,10 @@ function diaIncompleto(d){
     if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
     if(d.tipo!=="normal") return false;
 
+    // Si no tiene nada, se considera no laborable y no alerta.
+    if(!esLaborable(d)) return false;
+
+    // Si tiene algún dato, debe tener entrada y salida efectiva.
     return !entradaEfectiva(d) || !salidaEfectiva(d);
 }
 
@@ -407,8 +433,10 @@ function diaEstimado(d){
     if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
     if(d.tipo!=="normal") return false;
 
-    // Ya NO se considera estimado por no tener real.
-    // Solo se marca si falta algún dato efectivo: ni real ni planificado.
+    // Ya no avisamos por no tener real.
+    // Solo avisamos si el día tiene algún dato pero falta entrada o salida efectiva.
+    if(!esLaborable(d)) return false;
+
     return !entradaEfectiva(d) || !salidaEfectiva(d);
 }
 
@@ -579,11 +607,14 @@ function cambiarMes(n){
 function abrirDia(fecha){
     cambiarTab("calendario");
     seleccion=fecha;
+    document.getElementById("panel").classList.remove("editorOculto");
     let d=obtenerDia(fecha,true);
 
     let aviso = "";
 
-    if(esFuturo(d.fecha)){
+    if(!esLaborable(d) && d.tipo==="normal"){
+        aviso = `<div class="small">Día no laborable. No cuenta hasta que añadas planificación o una hora real.</div>`;
+    } else if(esFuturo(d.fecha)){
         aviso = `<div class="small">Día futuro. No se considera pendiente todavía.</div>`;
     } else if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)){
         aviso = `<div class="small">Hoy todavía no ha terminado la jornada planificada. No se considera error.</div>`;
@@ -628,6 +659,7 @@ function abrirDia(fecha){
 
         <button class="guardar" onclick="guardarDia()">Guardar día</button>
         <button class="eliminar" onclick="eliminarDia()">Eliminar día</button>
+        <button class="eliminar" onclick="cerrarEditor()">Cerrar</button>
     `;
 
     document.getElementById("tipoDia").value=d.tipo;
@@ -645,6 +677,13 @@ function usarPlanificacionDia(){
     abrirDia(seleccion);
 
     alert("Día dejado con planificación automática.");
+}
+
+
+function cerrarEditor(){
+    seleccion = null;
+    document.getElementById("panel").classList.add("editorOculto");
+    document.getElementById("panel").innerHTML = "";
 }
 
 function guardarDia(){
@@ -691,7 +730,7 @@ function eliminarDia(){
     data=data.filter(x=>x.fecha!==seleccion);
     guardar();
     render();
-    document.getElementById("panel").innerHTML="Día eliminado.";
+    cerrarEditor();
 }
 
 
@@ -800,7 +839,7 @@ function estadoHoy(){
 
 function exportarJSON(){
     let paquete = {
-        version:"mis_horas_v11_plan_base",
+        version:"mis_horas_v14_editor_desplegable",
         fechaExportacion:new Date().toISOString(),
         config:config,
         data:data
@@ -863,7 +902,7 @@ function exportarCSV(){
             d.salidaPlan || "",
             d.entradaReal || "",
             d.salidaReal || "",
-            objetivo(d),
+            objetivo(d) ?? "",
             trabajado(d) ?? "",
             saldo(d) ?? "",
             formatMin(objetivo(d)),
@@ -880,6 +919,33 @@ function exportarCSV(){
     a.href=URL.createObjectURL(blob);
     a.download="mis_horas.csv";
     a.click();
+}
+
+
+function actualizarBotonesHoy(){
+    let d = obtenerDia(hoyStr(), false);
+
+    let btnEntrada = document.getElementById("btnEntradaReal");
+    let btnSalida = document.getElementById("btnSalidaReal");
+
+    if(!btnEntrada || !btnSalida) return;
+
+    btnEntrada.classList.remove("marcado");
+    btnSalida.classList.remove("marcado");
+
+    if(d.entradaReal){
+        btnEntrada.innerText = "ENTRADA: " + d.entradaReal;
+        btnEntrada.classList.add("marcado");
+    } else {
+        btnEntrada.innerText = "ENTRAR REAL";
+    }
+
+    if(d.salidaReal){
+        btnSalida.innerText = "SALIDA: " + d.salidaReal;
+        btnSalida.classList.add("marcado");
+    } else {
+        btnSalida.innerText = "SALIR REAL";
+    }
 }
 
 function render(){
@@ -921,6 +987,7 @@ function render(){
         div.className="day";
 
         if(esFuturo(fecha)) div.classList.add("futuro");
+        if(!esLaborable(d) && d.tipo==="normal") div.classList.add("noLaborable");
         if(d.tipo!=="normal") div.classList.add(d.tipo);
         if(s>0) div.classList.add("positivo");
         if(s<0) div.classList.add("negativo");
@@ -928,15 +995,23 @@ function render(){
         if(diaRaro(d)) div.classList.add("raro");
         if(diaEstimado(d)) div.classList.add("estimado");
 
-        div.innerHTML=`
-            <strong>${i}</strong><br>
-            ${d.tipo!=="normal" ? d.tipo : ""}
-            ${diaEstimado(d) ? "⚠️" : ""}<br>
-            <span class="${d.entradaReal?'real':'plan'}">${entradaEfectiva(d)||""}</span>
-            -
-            <span class="${d.salidaReal?'real':'plan'}">${salidaEfectiva(d)||""}</span>
-            <div class="saldo">${formatMin(s)}</div>
-        `;
+        if(!esLaborable(d) && d.tipo==="normal"){
+            div.innerHTML=`
+                <strong>${i}</strong><br>
+                <span class="small">No laboral</span><br>
+                <div class="saldo">-</div>
+            `;
+        } else {
+            div.innerHTML=`
+                <strong>${i}</strong><br>
+                ${d.tipo!=="normal" ? d.tipo : ""}
+                ${diaEstimado(d) ? "⚠️" : ""}<br>
+                <span class="${d.entradaReal?'real':'plan'}">${entradaEfectiva(d)||""}</span>
+                -
+                <span class="${d.salidaReal?'real':'plan'}">${salidaEfectiva(d)||""}</span>
+                <div class="saldo">${formatMin(s)}</div>
+            `;
+        }
 
         div.onclick=()=>abrirDia(fecha);
         cal.appendChild(div);
@@ -945,8 +1020,7 @@ function render(){
     resumenSemana();
     resumenMes();
 
-    document.getElementById("saldoTotal").innerText =
-        "Saldo total: " + formatMin(saldoTotal());
+    actualizarBotonesHoy();
 }
 
 cargarConfigUI();
