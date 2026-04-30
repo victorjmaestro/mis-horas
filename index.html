@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mis Horas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111111">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body { background:#111; color:white; font-family:Arial; text-align:center; margin:0; padding:15px; }
+.calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-width:760px; margin:20px auto; }
+.day { background:#1e1e1e; padding:8px; border-radius:8px; cursor:pointer; font-size:12px; min-height:86px; }
+.day:hover { background:#333; }
+.header { font-weight:bold; color:#aaa; }
+.vacaciones { background:#1f5f89; opacity:1 !important; }
+.baja, .festivo { background:#555; opacity:1 !important; }
+.positivo { border:2px solid #2ecc71; }
+.negativo { border:2px solid #e74c3c; }
+.incompleto { border:2px solid orange !important; }
+.raro { border:2px solid yellow !important; }
+.estimado { opacity:0.55; }
+.futuro { opacity:0.35; }
+.panel, .bloque, .top { background:#1e1e1e; padding:15px; margin:15px auto; max-width:660px; border-radius:10px; }
+button { margin:5px; padding:9px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
+.entrar { background:#2ecc71; }
+.salir { background:#e74c3c; }
+.guardar { background:#3498db; color:white; }
+.eliminar { background:#777; color:white; }
+.backup { background:#9b59b6; color:white; }
+.csv { background:#f39c12; color:white; }
+.config { background:#16a085; color:white; }
+input, select { margin:5px; padding:7px; border-radius:6px; border:none; }
+.small { font-size:12px; color:#bbb; }
+.saldo { font-size:12px; margin-top:4px; }
+.real { color:#2ecc71; }
+.plan { color:#aaa; }
+.alerta { color:orange; font-weight:bold; }
+</style>
+</head>
+
+<body>
+
+<h1>Mis Horas</h1>
+
+<div class="top">
+    <button class="entrar" onclick="marcarEntrada()">ENTRAR REAL</button>
+    <button class="salir" onclick="marcarSalida()">SALIR REAL</button>
+
+    <div id="estado"></div>
+    <div id="resumenMes"></div>
+    <div id="saldoTotal"></div>
+
+    <hr>
+
+    <button class="backup" onclick="exportarJSON()">Exportar backup</button>
+    <button class="backup" onclick="importarJSON()">Importar backup</button>
+    <button class="csv" onclick="exportarCSV()">Exportar Excel CSV</button>
+
+    <input type="file" id="fileInput" accept=".json" style="display:none">
+</div>
+
+<div class="panel">
+<h2>Configuración de jornada</h2>
+
+Lunes-Jueves entrada: <input id="cfgEntradaLJ" placeholder="08:00"><br>
+Lunes-Jueves salida: <input id="cfgSalidaLJ" placeholder="17:00"><br>
+
+Viernes entrada: <input id="cfgEntradaV" placeholder="08:00"><br>
+Viernes salida: <input id="cfgSalidaV" placeholder="14:00"><br>
+
+Descanso automático si se superan 6h:
+<input id="cfgDescanso" type="number" placeholder="30"> minutos<br>
+
+<button class="config" onclick="guardarConfig()">Guardar configuración</button>
+<button class="config" onclick="aplicarConfigMes()">Aplicar configuración al mes visible</button>
+
+<div class="small">
+Modo cómodo: si falta una hora real en días ya vencidos, se usa la planificación, pero el día se marca como estimado.
+</div>
+</div>
+
+<div class="bloque">
+<h2>Aplicar por bloque</h2>
+
+Desde: <input type="date" id="bloqueDesde"><br>
+Hasta: <input type="date" id="bloqueHasta"><br>
+
+Tipo:
+<select id="bloqueTipo">
+<option value="normal">Normal</option>
+<option value="vacaciones">Vacaciones</option>
+<option value="baja">Baja</option>
+<option value="festivo">Festivo</option>
+</select><br>
+
+Entrada planificada: <input id="bloqueEntradaPlan" placeholder="08:00"><br>
+Salida planificada: <input id="bloqueSalidaPlan" placeholder="17:00"><br>
+
+Modo:
+<select id="bloqueModo">
+<option value="sobrescribir">Sobrescribir</option>
+<option value="vacios">Solo días vacíos</option>
+<option value="plan">Solo cambiar planificación</option>
+</select><br>
+
+<button onclick="aplicarBloque()">Aplicar bloque</button>
+<button onclick="generarMes()">Generar mes automático</button>
+</div>
+
+<div>
+<button onclick="cambiarMes(-1)">◀</button>
+<span id="mes"></span>
+<button onclick="cambiarMes(1)">▶</button>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<div class="panel" id="panel">Pulsa un día para verlo o modificarlo.</div>
+
+<script>
+let config = JSON.parse(localStorage.getItem("config_horas")) || {
+    entradaLJ:"08:00",
+    salidaLJ:"17:00",
+    entradaV:"08:00",
+    salidaV:"14:00",
+    descanso:30
+};
+
+let data =
+    JSON.parse(localStorage.getItem("horas_v7")) ||
+    JSON.parse(localStorage.getItem("horas_v6")) ||
+    JSON.parse(localStorage.getItem("horas_v5")) ||
+    JSON.parse(localStorage.getItem("horas_v4")) ||
+    JSON.parse(localStorage.getItem("horas_v3")) ||
+    JSON.parse(localStorage.getItem("horas_v2")) ||
+    [];
+
+let fechaActual = new Date();
+let seleccion = null;
+
+function guardar(){
+    localStorage.setItem("horas_v7", JSON.stringify(data));
+    localStorage.setItem("config_horas", JSON.stringify(config));
+}
+
+function fechaLocalStr(date = new Date()){
+    let y = date.getFullYear();
+    let m = String(date.getMonth()+1).padStart(2,"0");
+    let d = String(date.getDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+}
+
+function hoyStr(){
+    return fechaLocalStr(new Date());
+}
+
+function horaActual(){
+    return new Date().toTimeString().slice(0,5);
+}
+
+function esFuturo(fecha){
+    return fecha > hoyStr();
+}
+
+function esHoy(fecha){
+    return fecha === hoyStr();
+}
+
+function yaPasoSalidaPlanificada(d){
+    if(!esHoy(d.fecha)) return true;
+    let salida = d.salidaPlan;
+    if(!salida) return false;
+    return min(horaActual()) > min(salida);
+}
+
+function cargarConfigUI(){
+    document.getElementById("cfgEntradaLJ").value = config.entradaLJ;
+    document.getElementById("cfgSalidaLJ").value = config.salidaLJ;
+    document.getElementById("cfgEntradaV").value = config.entradaV;
+    document.getElementById("cfgSalidaV").value = config.salidaV;
+    document.getElementById("cfgDescanso").value = config.descanso;
+}
+
+function guardarConfig(){
+    let eLJ = document.getElementById("cfgEntradaLJ").value.trim();
+    let sLJ = document.getElementById("cfgSalidaLJ").value.trim();
+    let eV = document.getElementById("cfgEntradaV").value.trim();
+    let sV = document.getElementById("cfgSalidaV").value.trim();
+    let descanso = parseInt(document.getElementById("cfgDescanso").value);
+
+    if(!validarHora(eLJ) || !validarHora(sLJ) || !validarHora(eV) || !validarHora(sV)){
+        return alert("Formato de hora inválido. Usa HH:MM.");
+    }
+
+    if(min(sLJ) <= min(eLJ)) return alert("Lunes-Jueves: la salida debe ser posterior a la entrada.");
+    if(min(sV) <= min(eV)) return alert("Viernes: la salida debe ser posterior a la entrada.");
+    if(isNaN(descanso) || descanso < 0 || descanso > 180) return alert("Descanso inválido.");
+
+    config = {
+        entradaLJ:eLJ,
+        salidaLJ:sLJ,
+        entradaV:eV,
+        salidaV:sV,
+        descanso:descanso
+    };
+
+    guardar();
+    render();
+    alert("Configuración guardada.");
+}
+
+function validarHora(h){
+    if(!h) return true;
+    return /^([01]\d|2[0-3]):[0-5]\d$/.test(h);
+}
+
+function min(h){
+    if(!h) return null;
+    let [a,b]=h.split(":").map(Number);
+    return a*60+b;
+}
+
+function formatMin(m){
+    if(m==null || isNaN(m)) return "-";
+    let signo=m<0?"-":"+";
+    m=Math.abs(m);
+    return signo + Math.floor(m/60) + "h " + (m%60) + "m";
+}
+
+function diaSemana(fecha){
+    return new Date(fecha+"T12:00:00").getDay();
+}
+
+function planDefault(fecha){
+    let d=diaSemana(fecha);
+
+    if(d>=1 && d<=4){
+        return {entrada:config.entradaLJ, salida:config.salidaLJ};
+    }
+
+    if(d===5){
+        return {entrada:config.entradaV, salida:config.salidaV};
+    }
+
+    return {entrada:null, salida:null};
+}
+
+function obtenerDia(fecha, crear=false){
+    let d=data.find(x=>x.fecha===fecha);
+
+    if(!d && crear){
+        let p=planDefault(fecha);
+        d={
+            fecha:fecha,
+            tipo:"normal",
+            entradaPlan:p.entrada,
+            salidaPlan:p.salida,
+            entradaReal:null,
+            salidaReal:null
+        };
+        data.push(d);
+    }
+
+    if(!d){
+        let p=planDefault(fecha);
+        return {
+            fecha:fecha,
+            tipo:"normal",
+            entradaPlan:p.entrada,
+            salidaPlan:p.salida,
+            entradaReal:null,
+            salidaReal:null,
+            virtual:true
+        };
+    }
+
+    if(!d.tipo) d.tipo="normal";
+
+    if(d.entradaPlan===undefined || d.salidaPlan===undefined){
+        let p=planDefault(fecha);
+        d.entradaPlan=d.entradaPlan ?? p.entrada;
+        d.salidaPlan=d.salidaPlan ?? p.salida;
+    }
+
+    if(d.entradaReal===undefined) d.entradaReal=null;
+    if(d.salidaReal===undefined) d.salidaReal=null;
+
+    return d;
+}
+
+function entradaEfectiva(d){
+    return d.entradaReal || d.entradaPlan || null;
+}
+
+function salidaEfectiva(d){
+    return d.salidaReal || d.salidaPlan || null;
+}
+
+function calcularMinutos(entrada, salida, fecha){
+    if(!entrada || !salida) return null;
+
+    let total=min(salida)-min(entrada);
+    if(total<0) return null;
+
+    let ds=diaSemana(fecha);
+    if(total>360 && ds>=1 && ds<=5){
+        total-=config.descanso;
+    }
+
+    return total;
+}
+
+function trabajado(d){
+    if(d.tipo!=="normal") return 0;
+    return calcularMinutos(entradaEfectiva(d), salidaEfectiva(d), d.fecha);
+}
+
+function objetivo(d){
+    if(d.tipo!=="normal") return 0;
+    let total = calcularMinutos(d.entradaPlan, d.salidaPlan, d.fecha);
+    return total ?? 0;
+}
+
+function saldo(d){
+    let t=trabajado(d);
+    if(t==null) return null;
+    return t-objetivo(d);
+}
+
+function saldoTotal(){
+    let total = 0;
+
+    data.forEach(d=>{
+        let s = saldo(d);
+        if(s!=null) total += s;
+    });
+
+    return total;
+}
+
+function diaIncompleto(d){
+    if(esFuturo(d.fecha)) return false;
+    if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
+    return d.tipo==="normal" && d.entradaReal && !d.salidaReal;
+}
+
+function diaRaro(d){
+    if(esFuturo(d.fecha)) return false;
+    if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
+    return d.tipo==="normal" && !d.entradaReal && d.salidaReal;
+}
+
+function diaEstimado(d){
+    if(d.tipo!=="normal") return false;
+    if(esFuturo(d.fecha)) return false;
+
+    if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)){
+        return false;
+    }
+
+    let er = d.entradaReal;
+    let sr = d.salidaReal;
+
+    if(!er && !sr) return true;
+    if(er && !sr) return true;
+    if(!er && sr) return true;
+
+    return false;
+}
+
+function hayEstimadosMes(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+
+        if(diaEstimado(d)) return true;
+    }
+
+    return false;
+}
+
+function contarEstimadosMes(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+    let total=0;
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+
+        if(diaEstimado(d)) total++;
+    }
+
+    return total;
+}
+
+function marcarEntrada(){
+    let fecha=hoyStr();
+    let d=obtenerDia(fecha,true);
+
+    if(d.tipo!=="normal") return alert("Hoy está marcado como " + d.tipo + ".");
+
+    d.entradaReal=horaActual();
+
+    guardar();
+    render();
+}
+
+function marcarSalida(){
+    let fecha=hoyStr();
+    let d=obtenerDia(fecha,true);
+
+    if(d.tipo!=="normal") return alert("Hoy está marcado como " + d.tipo + ".");
+    if(!entradaEfectiva(d)) return alert("No hay entrada planificada ni real.");
+
+    d.salidaReal=horaActual();
+
+    guardar();
+    render();
+}
+
+function generarMes(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+    let dias=new Date(año,mes+1,0).getDate();
+
+    for(let i=1;i<=dias;i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        if(data.find(x=>x.fecha===fecha)) continue;
+
+        let p=planDefault(fecha);
+        if(!p.entrada || !p.salida) continue;
+
+        data.push({
+            fecha:fecha,
+            tipo:"normal",
+            entradaPlan:p.entrada,
+            salidaPlan:p.salida,
+            entradaReal:null,
+            salidaReal:null
+        });
+    }
+
+    guardar();
+    render();
+    alert("Mes generado sin sobrescribir datos.");
+}
+
+function aplicarConfigMes(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+    let dias=new Date(año,mes+1,0).getDate();
+
+    for(let i=1;i<=dias;i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let p=planDefault(fecha);
+
+        if(!p.entrada || !p.salida) continue;
+
+        let d=obtenerDia(fecha,true);
+
+        if(d.tipo==="normal"){
+            d.entradaPlan=p.entrada;
+            d.salidaPlan=p.salida;
+        }
+    }
+
+    guardar();
+    render();
+    alert("Configuración aplicada al mes visible.");
+}
+
+function aplicarBloque(){
+    let desde=document.getElementById("bloqueDesde").value;
+    let hasta=document.getElementById("bloqueHasta").value;
+    let tipo=document.getElementById("bloqueTipo").value;
+    let entradaPlan=document.getElementById("bloqueEntradaPlan").value.trim();
+    let salidaPlan=document.getElementById("bloqueSalidaPlan").value.trim();
+    let modo=document.getElementById("bloqueModo").value;
+
+    if(!desde || !hasta) return alert("Faltan fechas.");
+    if(new Date(desde)>new Date(hasta)) return alert("El rango está mal.");
+    if(!validarHora(entradaPlan) || !validarHora(salidaPlan)) return alert("Hora inválida. Usa HH:MM.");
+
+    if(entradaPlan && salidaPlan && min(salidaPlan) <= min(entradaPlan)){
+        return alert("La salida planificada no puede ser menor o igual que la entrada.");
+    }
+
+    let actual=new Date(desde+"T12:00:00");
+    let fin=new Date(hasta+"T12:00:00");
+
+    while(actual<=fin){
+        let fecha=fechaLocalStr(actual);
+        let existe=data.find(x=>x.fecha===fecha);
+
+        if(modo==="vacios" && existe){
+            actual.setDate(actual.getDate()+1);
+            continue;
+        }
+
+        let d=obtenerDia(fecha,true);
+
+        d.tipo=tipo;
+
+        if(tipo==="normal"){
+            if(entradaPlan) d.entradaPlan=entradaPlan;
+            if(salidaPlan) d.salidaPlan=salidaPlan;
+        } else {
+            d.entradaPlan=null;
+            d.salidaPlan=null;
+            d.entradaReal=null;
+            d.salidaReal=null;
+        }
+
+        if(modo==="sobrescribir"){
+            d.entradaReal=null;
+            d.salidaReal=null;
+        }
+
+        actual.setDate(actual.getDate()+1);
+    }
+
+    guardar();
+    render();
+}
+
+function cambiarMes(n){
+    fechaActual.setMonth(fechaActual.getMonth()+n);
+    render();
+}
+
+function abrirDia(fecha){
+    seleccion=fecha;
+    let d=obtenerDia(fecha,true);
+
+    let aviso = "";
+
+    if(esFuturo(d.fecha)){
+        aviso = `<div class="small">Día futuro. No se considera pendiente todavía.</div>`;
+    } else if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)){
+        aviso = `<div class="small">Hoy todavía no ha terminado la jornada planificada. No se considera error.</div>`;
+    } else if(diaIncompleto(d)){
+        aviso = `<div class="alerta">⚠️ Falta la salida real. Se está usando la salida planificada.</div>`;
+    } else if(diaRaro(d)){
+        aviso = `<div class="alerta">⚠️ Hay salida real pero falta entrada real. Se está usando la entrada planificada.</div>`;
+    } else if(diaEstimado(d)){
+        aviso = `<div class="alerta">⚠️ Día estimado: se está usando la planificación.</div>`;
+    }
+
+    document.getElementById("panel").innerHTML=`
+        <h2>${fecha}</h2>
+        ${aviso}
+
+        Tipo:
+        <select id="tipoDia">
+            <option value="normal">Normal</option>
+            <option value="vacaciones">Vacaciones</option>
+            <option value="baja">Baja</option>
+            <option value="festivo">Festivo</option>
+        </select><br>
+
+        <h3>Planificado</h3>
+        Entrada planificada: <input id="entradaPlan" value="${d.entradaPlan||""}" placeholder="08:00"><br>
+        Salida planificada: <input id="salidaPlan" value="${d.salidaPlan||""}" placeholder="17:00"><br>
+
+        <h3>Real</h3>
+        Entrada real: <input id="entradaReal" value="${d.entradaReal||""}" placeholder="08:10"><br>
+        Salida real: <input id="salidaReal" value="${d.salidaReal||""}" placeholder="16:55"><br>
+
+        <div class="small">
+        Si dejas vacío el dato real en un día vencido, se usa el planificado y queda marcado como estimado.
+        </div>
+
+        <br>
+        Objetivo: ${formatMin(objetivo(d))}<br>
+        Trabajado: ${formatMin(trabajado(d))}<br>
+        Saldo: ${formatMin(saldo(d))}<br>
+
+        <button class="guardar" onclick="guardarDia()">Guardar día</button>
+        <button class="eliminar" onclick="eliminarDia()">Eliminar día</button>
+    `;
+
+    document.getElementById("tipoDia").value=d.tipo;
+}
+
+function guardarDia(){
+    let d=obtenerDia(seleccion,true);
+
+    let tipo=document.getElementById("tipoDia").value;
+    let ep=document.getElementById("entradaPlan").value.trim();
+    let sp=document.getElementById("salidaPlan").value.trim();
+    let er=document.getElementById("entradaReal").value.trim();
+    let sr=document.getElementById("salidaReal").value.trim();
+
+    if(!validarHora(ep) || !validarHora(sp) || !validarHora(er) || !validarHora(sr)){
+        return alert("Formato de hora inválido. Usa HH:MM.");
+    }
+
+    if(ep && sp && min(sp) <= min(ep)){
+        return alert("La salida planificada no puede ser menor o igual que la entrada.");
+    }
+
+    if(er && sr && min(sr) <= min(er)){
+        return alert("La salida real no puede ser menor o igual que la entrada.");
+    }
+
+    d.tipo=tipo;
+
+    if(tipo==="normal"){
+        d.entradaPlan=ep || null;
+        d.salidaPlan=sp || null;
+        d.entradaReal=er || null;
+        d.salidaReal=sr || null;
+    } else {
+        d.entradaPlan=null;
+        d.salidaPlan=null;
+        d.entradaReal=null;
+        d.salidaReal=null;
+    }
+
+    guardar();
+    render();
+    abrirDia(seleccion);
+}
+
+function eliminarDia(){
+    data=data.filter(x=>x.fecha!==seleccion);
+    guardar();
+    render();
+    document.getElementById("panel").innerHTML="Día eliminado.";
+}
+
+function resumenMes(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+    let total=0;
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+        let s=saldo(d);
+        if(s!=null) total+=s;
+    }
+
+    let texto = "Saldo mes: " + formatMin(total);
+
+    if(hayEstimadosMes()){
+        texto += "<br><span class='alerta'>⚠️ Hay " + contarEstimadosMes() + " día(s) estimado(s) vencido(s) este mes</span>";
+    }
+
+    document.getElementById("resumenMes").innerHTML = texto;
+}
+
+function estadoHoy(){
+    let d=obtenerDia(hoyStr(),false);
+
+    if(d.tipo!=="normal") return "Hoy: " + d.tipo;
+
+    let er=d.entradaReal ? "real" : "plan";
+    let sr=d.salidaReal ? "real" : "plan";
+
+    let aviso = "";
+    if(diaEstimado(d)){
+        aviso = "<br><span class='alerta'>⚠️ Hoy ya debería estar completo y tiene datos estimados</span>";
+    }
+
+    return `
+        Hoy: ${entradaEfectiva(d)||"-"} (${er}) - ${salidaEfectiva(d)||"-"} (${sr})<br>
+        Trabajado: ${formatMin(trabajado(d))} | Saldo: ${formatMin(saldo(d))}
+        ${aviso}
+    `;
+}
+
+function exportarJSON(){
+    let paquete = {
+        version:"mis_horas_v7",
+        fechaExportacion:new Date().toISOString(),
+        config:config,
+        data:data
+    };
+
+    let blob = new Blob([JSON.stringify(paquete, null, 2)], {type:"application/json"});
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "mis_horas_backup.json";
+    a.click();
+}
+
+function importarJSON(){
+    document.getElementById("fileInput").click();
+}
+
+document.getElementById("fileInput").addEventListener("change", function(e){
+    let file = e.target.files[0];
+    if(!file) return;
+
+    let reader = new FileReader();
+
+    reader.onload = function(){
+        try{
+            let importado = JSON.parse(reader.result);
+
+            if(Array.isArray(importado)){
+                data = importado;
+            } else if(importado.data && Array.isArray(importado.data)){
+                data = importado.data;
+                if(importado.config) config = importado.config;
+            } else {
+                return alert("Archivo inválido.");
+            }
+
+            guardar();
+            cargarConfigUI();
+            render();
+            alert("Backup importado correctamente.");
+        }catch{
+            alert("Error al cargar archivo.");
+        }
+    };
+
+    reader.readAsText(file);
+});
+
+function exportarCSV(){
+    let ordenado = [...data].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+
+    let filas=[
+        ["Fecha","Tipo","Entrada Plan","Salida Plan","Entrada Real","Salida Real","Objetivo min","Trabajado min","Saldo min","Objetivo","Trabajado","Saldo","Estimado vencido"]
+    ];
+
+    ordenado.forEach(d=>{
+        filas.push([
+            d.fecha,
+            d.tipo || "normal",
+            d.entradaPlan || "",
+            d.salidaPlan || "",
+            d.entradaReal || "",
+            d.salidaReal || "",
+            objetivo(d),
+            trabajado(d) ?? "",
+            saldo(d) ?? "",
+            formatMin(objetivo(d)),
+            formatMin(trabajado(d)),
+            formatMin(saldo(d)),
+            diaEstimado(d) ? "Sí" : "No"
+        ]);
+    });
+
+    let csv = filas.map(f=>f.map(c=>`"${String(c).replaceAll('"','""')}"`).join(";")).join("\n");
+
+    let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="mis_horas.csv";
+    a.click();
+}
+
+function render(){
+    document.getElementById("estado").innerHTML=estadoHoy();
+
+    let cal=document.getElementById("calendar");
+    cal.innerHTML="";
+
+    let diasSemana=["L","M","X","J","V","S","D"];
+    diasSemana.forEach(x=>{
+        let h=document.createElement("div");
+        h.className="header";
+        h.innerText=x;
+        cal.appendChild(h);
+    });
+
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+
+    document.getElementById("mes").innerText=
+        fechaActual.toLocaleString("es",{month:"long",year:"numeric"});
+
+    let primerDia=new Date(año,mes,1,12).getDay();
+    let offset=primerDia===0?6:primerDia-1;
+
+    for(let i=0;i<offset;i++){
+        let empty=document.createElement("div");
+        cal.appendChild(empty);
+    }
+
+    let dias=new Date(año,mes+1,0).getDate();
+
+    for(let i=1;i<=dias;i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+        let s=saldo(d);
+
+        let div=document.createElement("div");
+        div.className="day";
+
+        if(esFuturo(fecha)) div.classList.add("futuro");
+        if(d.tipo!=="normal") div.classList.add(d.tipo);
+        if(s>0) div.classList.add("positivo");
+        if(s<0) div.classList.add("negativo");
+        if(diaIncompleto(d)) div.classList.add("incompleto");
+        if(diaRaro(d)) div.classList.add("raro");
+        if(diaEstimado(d)) div.classList.add("estimado");
+
+        div.innerHTML=`
+            <strong>${i}</strong><br>
+            ${d.tipo!=="normal" ? d.tipo : ""}
+            ${diaEstimado(d) ? "⚠️" : ""}<br>
+            <span class="${d.entradaReal?'real':'plan'}">${entradaEfectiva(d)||""}</span>
+            -
+            <span class="${d.salidaReal?'real':'plan'}">${salidaEfectiva(d)||""}</span>
+            <div class="saldo">${formatMin(s)}</div>
+        `;
+
+        div.onclick=()=>abrirDia(fecha);
+        cal.appendChild(div);
+    }
+
+    resumenMes();
+
+    document.getElementById("saldoTotal").innerText =
+        "Saldo total: " + formatMin(saldoTotal());
+}
+
+cargarConfigUI();
+render();
+</script>
+
+</body>
+</html>
