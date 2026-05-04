@@ -5,51 +5,541 @@
 <title>Mis Horas</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#111111">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mis Horas">
+<link rel="apple-touch-icon" href="icon.png">
 
 <style>
-body { background:#111; color:white; font-family:Arial; text-align:center; margin:0; padding:15px; }
-h1 { margin-top:5px; }
-.tabs { display:flex; gap:8px; justify-content:center; position:sticky; top:0; background:#111; padding:10px 0; z-index:10; }
-.tabs button { background:#222; color:white; border:1px solid #333; }
-.tabs button.activo { background:#3498db; color:white; }
-.tab { display:none; }
-.tab.activa { display:block; }
+:root{
+    --bg:#0d1117;
+    --card:#161b22;
+    --card2:#111827;
+    --line:#30363d;
+    --text:#f3f4f6;
+    --muted:#9ca3af;
+    --green:#22c55e;
+    --red:#ef4444;
+    --blue:#3b82f6;
+    --purple:#8b5cf6;
+    --orange:#f59e0b;
+    --cyan:#14b8a6;
+    --yellow:#facc15;
+}
+*{ box-sizing:border-box; }
+body{
+    background:radial-gradient(circle at top, rgba(59,130,246,0.16), transparent 35%), linear-gradient(180deg,#0d1117 0%,#111827 100%);
+    color:var(--text);
+    font-family:Inter, Arial, sans-serif;
+    text-align:center;
+    margin:0;
+    padding:14px;
+    min-height:100vh;
+}
+h1{ margin:8px 0 14px; font-size:30px; letter-spacing:-0.5px; }
+h2{ margin:4px 0 14px; font-size:20px; }
+h3{ margin:18px 0 8px; color:#d1d5db; }
 
-.calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-width:760px; margin:20px auto; }
-.day { background:#1e1e1e; padding:8px; border-radius:8px; cursor:pointer; font-size:12px; min-height:86px; }
-.day:hover { background:#333; }
-.header { font-weight:bold; color:#aaa; }
-.vacaciones { background:#1f5f89; opacity:1 !important; }
-.baja, .festivo { background:#555; opacity:1 !important; }
-.positivo { border:2px solid #2ecc71; }
-.negativo { border:2px solid #e74c3c; }
-.incompleto { border:2px solid orange !important; }
-.raro { border:2px solid yellow !important; }
-.estimado { opacity:0.55; }
-.futuro { opacity:0.35; }
-.noLaborable { opacity:0.35; }
+.tabs{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    position:sticky;
+    top:0;
+    background:rgba(13,17,23,0.88);
+    backdrop-filter:blur(10px);
+    padding:10px 0;
+    z-index:10;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.tabs button{
+    background:#111827;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:10px 13px;
+    font-size:13px;
+}
+.tabs button.activo{
+    background:linear-gradient(135deg,var(--blue),#2563eb);
+    color:white;
+    border-color:#60a5fa;
+    box-shadow:0 6px 18px rgba(59,130,246,0.25);
+}
 
-.panel, .bloque, .top { background:#1e1e1e; padding:15px; margin:15px auto; max-width:660px; border-radius:10px; }
-.editorOculto { display:none; }
-button { margin:5px; padding:10px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
-.entrar { background:#2ecc71; }
-.salir { background:#e74c3c; }
-.marcado { box-shadow:0 0 0 3px white inset; filter:brightness(1.15); }
-.guardar { background:#3498db; color:white; }
-.eliminar { background:#777; color:white; }
-.backup { background:#9b59b6; color:white; }
-.csv { background:#f39c12; color:white; }
-.config { background:#16a085; color:white; }
-input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-width:90%; }
-.small { font-size:12px; color:#bbb; }
-.saldo { font-size:12px; margin-top:4px; }
-.real { color:#2ecc71; }
-.plan { color:#aaa; }
-.alerta { color:orange; font-weight:bold; }
+.tab{ display:none; }
+.tab.activa{ display:block; animation:fadeIn .18s ease-out; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
 
-.resumenGrande { font-size:18px; line-height:1.7; }
-.accionesRapidas button { font-size:16px; padding:14px 18px; }
+.panel,.bloque,.top{
+    background:rgba(22,27,34,0.92);
+    padding:18px;
+    margin:14px auto;
+    max-width:720px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 14px 35px rgba(0,0,0,0.25);
+}
+button{
+    margin:5px;
+    padding:10px 14px;
+    border:none;
+    border-radius:11px;
+    cursor:pointer;
+    font-weight:700;
+    color:#0b1220;
+    transition:transform .08s ease, filter .12s ease, box-shadow .12s ease;
+}
+button:hover{ filter:brightness(1.08); }
+button:active{ transform:scale(0.97); }
+
+.entrar{ background:linear-gradient(135deg,var(--green),#16a34a); color:white; box-shadow:0 8px 18px rgba(34,197,94,0.22); }
+.salir{ background:linear-gradient(135deg,var(--red),#dc2626); color:white; box-shadow:0 8px 18px rgba(239,68,68,0.22); }
+.guardar{ background:linear-gradient(135deg,var(--blue),#2563eb); color:white; }
+.eliminar{ background:#4b5563; color:white; }
+.backup{ background:linear-gradient(135deg,var(--purple),#7c3aed); color:white; }
+.csv{ background:linear-gradient(135deg,var(--orange),#d97706); color:white; }
+.config{ background:linear-gradient(135deg,var(--cyan),#0f766e); color:white; }
+.marcado{ box-shadow:0 0 0 3px rgba(255,255,255,0.85) inset,0 8px 18px rgba(255,255,255,0.08); filter:brightness(1.12); }
+
+input,select{
+    margin:6px;
+    padding:10px 11px;
+    border-radius:11px;
+    border:1px solid var(--line);
+    background:#0f172a;
+    color:white;
+    max-width:90%;
+    outline:none;
+}
+input:focus,select:focus{ border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,0.18); }
+
+.cardsInicio{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin:10px 0 14px;
+}
+.datoCard{
+    background:#111827;
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:16px;
+    padding:14px;
+    text-align:left;
+    box-shadow:0 10px 24px rgba(0,0,0,0.18);
+}
+.datoTitulo{
+    font-size:12px;
+    letter-spacing:0.08em;
+    color:#9ca3af;
+    font-weight:bold;
+}
+.datoLinea{
+    font-size:15px;
+    color:#d1d5db;
+    margin-top:4px;
+}
+.datoValor{
+    font-size:28px;
+    font-weight:800;
+    margin-top:4px;
+}
+.saldoPos{ color:var(--green); }
+.saldoNeg{ color:var(--red); }
+.saldoCero{ color:#e5e7eb; }
+
+.calendar{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:8px;
+    max-width:780px;
+    margin:18px auto;
+}
+.day{
+    background:rgba(31,41,55,0.88);
+    padding:9px 6px;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:12px;
+    min-height:88px;
+    border:1px solid rgba(255,255,255,0.07);
+    transition:transform .08s ease, background .12s ease, border .12s ease;
+}
+.day:hover{ background:#374151; transform:translateY(-1px); }
+.header{ font-weight:bold; color:var(--muted); font-size:13px; padding:6px 0; }
+
+.vacaciones{ background:linear-gradient(135deg,#1e3a8a,#0369a1) !important; opacity:1 !important; }
+.baja{ background:linear-gradient(135deg,#713f12,#92400e) !important; opacity:1 !important; }
+.festivo{ background:linear-gradient(135deg,#581c87,#7e22ce) !important; opacity:1 !important; box-shadow:0 0 0 2px var(--yellow) inset; }
+.positivo{ border:2px solid var(--green); }
+.negativo{ border:2px solid var(--red); }
+.incompleto{ border:2px solid var(--orange) !important; }
+.futuro{ opacity:0.42; }
+.noLaborable{ opacity:0.42; }
+
+.small{ font-size:12px; color:var(--muted); line-height:1.45; }
+.saldo{ font-size:12px; margin-top:5px; color:#d1d5db; }
+.real{ color:#86efac; font-weight:bold; }
+.plan{ color:#cbd5e1; }
+.alerta{ color:#fbbf24; font-weight:bold; }
+.resumenGrande{ font-size:18px; line-height:1.7; padding:10px 0; }
+.detalleSecundario{ font-size:13px !important; color:#9ca3af; opacity:0.85; }
+
+.accionesRapidas{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:8px; }
+.accionesRapidas button{ font-size:16px; padding:14px 18px; min-width:140px; }
+.editorOculto{ display:none; }
+#mes{ display:inline-block; min-width:190px; font-weight:bold; color:#e5e7eb; text-transform:capitalize; }
+hr{ border:none; border-top:1px solid rgba(255,255,255,0.08); margin:16px 0; }
+
+.graficoBarras{
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:4px;
+    min-height:160px;
+    padding:12px;
+    border-radius:14px;
+    background:#0f172a;
+    overflow-x:auto;
+}
+.barraDia{
+    width:10px;
+    min-width:10px;
+    border-radius:5px 5px 0 0;
+    cursor:pointer;
+}
+.barraPos{ background:#22c55e; }
+.barraNeg{ background:#ef4444; }
+.barraCero{ background:#64748b; }
+.graficoLinea{
+    display:flex;
+    align-items:flex-start;
+    gap:4px;
+    min-height:130px;
+    padding:12px;
+    border-radius:14px;
+    background:#0f172a;
+    overflow-x:auto;
+}
+.puntoAcumulado{
+    width:11px;
+    min-width:11px;
+    height:11px;
+    border-radius:50%;
+    cursor:pointer;
+}
+details summary{ cursor:pointer; color:#9ca3af; }
+
+@media (min-width:700px){
+    .cardsInicio{ grid-template-columns:repeat(3,1fr); }
+}
+@media (max-width:600px){
+    body{ padding:10px; }
+    h1{ font-size:26px; }
+    .panel,.bloque,.top{ padding:14px; border-radius:16px; }
+    .calendar{ gap:5px; }
+    .day{ min-height:76px; font-size:11px; padding:7px 4px; border-radius:11px; }
+    .accionesRapidas button{ width:100%; }
+    .tabs{ gap:5px; }
+    .tabs button{ padding:9px 9px; font-size:12px; }
+    .datoValor{ font-size:25px; }
+}
+
+/* --- Mobile-first clarity upgrade --- */
+.kpiPrincipal{
+    border:1px solid rgba(255,255,255,0.14);
+    background:linear-gradient(135deg, rgba(59,130,246,0.20), rgba(17,24,39,0.95));
+}
+.kpiPrincipal .datoValor{ font-size:38px; line-height:1.05; }
+.kpiSecundario .datoValor{ font-size:25px; }
+.datoCard{ position:relative; overflow:hidden; }
+.datoCard::after{
+    content:"";
+    position:absolute;
+    right:-30px;
+    top:-30px;
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.035);
+}
+.estadoChip{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    margin-top:6px;
+}
+.chipOk{ background:rgba(34,197,94,0.18); color:#86efac; }
+.chipAviso{ background:rgba(245,158,11,0.18); color:#fbbf24; }
+.chipError{ background:rgba(239,68,68,0.18); color:#fca5a5; }
+.mobileResumen{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+.mobileResumen .datoCard:first-child{ grid-column:1 / -1; }
+.day{ display:flex; flex-direction:column; justify-content:space-between; }
+.day strong{ font-size:15px; }
+.day .saldo{ font-weight:800; font-size:13px; }
+.calMiniHorario{ font-size:11px; color:#cbd5e1; }
+.calTipo{ font-size:10px; color:#d1d5db; min-height:12px; }
+@media (max-width:600px){
+    .cardsInicio{ grid-template-columns:1fr 1fr; gap:9px; }
+    #cardHoy{ grid-column:1 / -1; }
+    .datoCard{ padding:13px; border-radius:15px; }
+    .datoTitulo{ font-size:10px; }
+    .datoValor{ font-size:22px; }
+    #cardHoy .datoValor{ font-size:36px; }
+    .datoLinea{ font-size:13px; }
+    .detalleSecundario,#resumenSemana,#resumenMes{ display:none; }
+    .calendar{ gap:4px; }
+    .day{ min-height:70px; padding:6px 4px; }
+    .day strong{ font-size:14px; }
+    .day .saldo{ font-size:12px; }
+    .calMiniHorario{ font-size:10px; }
+    .calTipo{ font-size:9px; }
+}
+
+
+textarea{
+    margin:6px;
+    padding:10px 11px;
+    border-radius:11px;
+    border:1px solid var(--line);
+    background:#0f172a;
+    color:white;
+    width:90%;
+    min-height:80px;
+    resize:vertical;
+    outline:none;
+}
+textarea:focus{
+    border-color:#60a5fa;
+    box-shadow:0 0 0 3px rgba(96,165,250,0.18);
+}
+.listaRevision{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+.itemRevision{
+    background:#111827;
+    border:1px solid rgba(255,255,255,0.09);
+    border-radius:14px;
+    padding:12px;
+    text-align:left;
+    cursor:pointer;
+}
+.itemRevision:hover{ filter:brightness(1.08); }
+.itemTitulo{
+    font-weight:800;
+    font-size:14px;
+}
+.itemDetalle{
+    font-size:12px;
+    color:#9ca3af;
+    margin-top:4px;
+}
+.badge{
+    display:inline-block;
+    padding:3px 7px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:800;
+    margin-left:5px;
+}
+.badgeWarn{ background:rgba(245,158,11,0.18); color:#fbbf24; }
+.badgeInfo{ background:rgba(59,130,246,0.18); color:#93c5fd; }
+.badgeOk{ background:rgba(34,197,94,0.18); color:#86efac; }
+.badgeSpecial{ background:rgba(139,92,246,0.18); color:#c4b5fd; }
+
+
+.jornadaGrid{
+    display:grid;
+    grid-template-columns:1.05fr 0.9fr 0.9fr 0.9fr 0.65fr;
+    gap:6px;
+    align-items:center;
+    max-width:520px;
+    margin:8px auto 14px;
+}
+.jornadaGrid .head{
+    color:#9ca3af;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+}
+.jornadaGrid input{
+    width:100%;
+    margin:0;
+    padding:8px;
+    text-align:center;
+}
+.jornadaDia{
+    text-align:left;
+    font-weight:700;
+    font-size:13px;
+}
+.checkCompact{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.checkCompact input{
+    width:18px;
+    height:18px;
+    margin:0;
+}
+.teleBadge{
+    display:inline-block;
+    padding:3px 7px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:800;
+    background:rgba(20,184,166,0.18);
+    color:#5eead4;
+    margin-left:4px;
+}
+@media(max-width:600px){
+    .jornadaGrid{
+        grid-template-columns:0.9fr 0.85fr 0.85fr 0.85fr 0.55fr;
+        gap:5px;
+    }
+    .jornadaDia{font-size:12px;}
+    .jornadaGrid input{padding:7px 5px;font-size:12px;}
+}
+
+
+.detalleNomina{
+    margin-top:8px;
+    border-top:1px solid rgba(255,255,255,0.08);
+    padding-top:8px;
+}
+.detalleNomina summary{
+    cursor:pointer;
+    color:#9ca3af;
+    font-size:12px;
+    font-weight:700;
+}
+.lineaDetalle{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-size:12px;
+    padding:5px 0;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.lineaDetalle span:first-child{ color:#d1d5db; }
+.lineaDetalle span:last-child{ color:#f3f4f6; font-weight:700; text-align:right; }
+
+
+/* --- iPhone / mobile app framing --- */
+html{
+    background:#0d1117;
+    min-height:100%;
+    min-height:-webkit-fill-available;
+}
+body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+    padding-left:max(10px, env(safe-area-inset-left));
+    padding-right:max(10px, env(safe-area-inset-right));
+    padding-top:max(10px, env(safe-area-inset-top));
+    padding-bottom:max(16px, env(safe-area-inset-bottom));
+    min-height:-webkit-fill-available;
+    -webkit-tap-highlight-color:transparent;
+}
+.tabs{
+    left:0;
+    right:0;
+    margin-left:calc(-1 * max(10px, env(safe-area-inset-left)));
+    margin-right:calc(-1 * max(10px, env(safe-area-inset-right)));
+    padding-left:max(8px, env(safe-area-inset-left));
+    padding-right:max(8px, env(safe-area-inset-right));
+    overflow-x:auto;
+    justify-content:flex-start;
+    scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{ display:none; }
+.tabs button{
+    flex:0 0 auto;
+    white-space:nowrap;
+}
+.panel,.bloque,.top{
+    width:100%;
+    max-width:720px;
+}
+input,select,textarea{
+    font-size:16px;
+}
+button{
+    touch-action:manipulation;
+}
+@media(max-width:430px){
+    body{ padding-left:10px; padding-right:10px; }
+    h1{ font-size:24px; margin-top:6px; margin-bottom:10px; }
+    .tabs{ gap:6px; padding-top:8px; padding-bottom:8px; }
+    .tabs button{ font-size:12px; padding:9px 11px; }
+    .panel,.bloque,.top{ margin:10px auto; padding:13px; border-radius:16px; }
+    .cardsInicio{ grid-template-columns:1fr 1fr; gap:8px; }
+    #cardHoy{ grid-column:1 / -1; }
+    .datoCard{ padding:12px; border-radius:14px; }
+    .datoTitulo{ font-size:10px; }
+    .datoValor{ font-size:22px; line-height:1.1; }
+    #cardHoy .datoValor{ font-size:34px; }
+    .datoLinea{ font-size:12px; }
+    .accionesRapidas{ gap:7px; }
+    .accionesRapidas button{
+        width:100%;
+        min-width:0;
+        font-size:15px;
+        padding:13px 14px;
+    }
+    .calendar{
+        grid-template-columns:repeat(7,minmax(0,1fr));
+        gap:4px;
+        width:100%;
+        margin:14px auto;
+    }
+    .day{
+        min-width:0;
+        min-height:68px;
+        padding:6px 3px;
+        border-radius:10px;
+        font-size:10px;
+    }
+    .day strong{ font-size:13px; }
+    .day .saldo{ font-size:11px; overflow:hidden; text-overflow:ellipsis; }
+    .calMiniHorario{ font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .calTipo{ font-size:9px; min-height:11px; white-space:nowrap; overflow:hidden; }
+    #mes{ min-width:145px; font-size:14px; }
+    .jornadaGrid{
+        grid-template-columns:0.85fr 0.8fr 0.8fr 0.75fr 0.45fr;
+        gap:4px;
+    }
+    .jornadaDia{ font-size:11px; }
+    .jornadaGrid .head{ font-size:9px; }
+    .jornadaGrid input{ font-size:12px; padding:7px 4px; }
+    .checkCompact input{ width:18px; height:18px; }
+    .graficoBarras,.graficoLinea{
+        justify-content:flex-start;
+        min-height:135px;
+    }
+    .barraDia{ width:9px; min-width:9px; }
+}
+@media(max-width:360px){
+    .tabs button{ font-size:11px; padding:8px 9px; }
+    .datoValor{ font-size:20px; }
+    #cardHoy .datoValor{ font-size:30px; }
+    .day{ min-height:62px; }
+    .jornadaGrid{
+        grid-template-columns:0.8fr 0.78fr 0.78fr 0.7fr 0.42fr;
+    }
+}
+
 </style>
 </head>
 
@@ -60,6 +550,8 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
 <div class="tabs">
     <button id="btn-inicio" onclick="cambiarTab('inicio')">Inicio</button>
     <button id="btn-calendario" onclick="cambiarTab('calendario')">Calendario</button>
+    <button id="btn-revision" onclick="cambiarTab('revision')">Revisión</button>
+    <button id="btn-nomina" onclick="cambiarTab('nomina')">Nómina</button>
     <button id="btn-config" onclick="cambiarTab('config')">Config</button>
 </div>
 
@@ -77,7 +569,16 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
 
         <hr>
 
-        <div id="estado" class="resumenGrande"></div>
+        <div class="cardsInicio mobileResumen">
+            <div class="datoCard" id="cardHoy"></div>
+            <div class="datoCard" id="cardSemana"></div>
+            <div class="datoCard" id="cardMes"></div>
+            <div class="datoCard" id="cardBrutoMes"></div>
+            <div class="datoCard" id="cardNetoMes"></div>
+            <div class="datoCard" id="cardValorSaldoMes"></div>
+        </div>
+
+        <div id="estado" class="resumenGrande detalleSecundario"></div>
         <div id="resumenSemana"></div>
         <div id="resumenMes"></div>
     </div>
@@ -85,7 +586,7 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
     <div class="panel">
         <h2>Lectura rápida</h2>
         <div class="small">
-            Verde = dato real. Gris = dato planificado. ⚠️ = dato estimado vencido.
+            Planificado = horario base. Real = corrección. Vacaciones, baja y festivo cuentan como pagados según la planificación del día.
         </div>
     </div>
 </div>
@@ -102,25 +603,163 @@ input, select { margin:5px; padding:8px; border-radius:6px; border:none; max-wid
     <div class="panel editorOculto" id="panel"></div>
 </div>
 
+<div id="tab-revision" class="tab">
+    <div class="panel">
+        <h2>Revisión del mes</h2>
+        <div class="small">
+            Lista rápida para revisar días incompletos, correcciones reales, vacaciones, bajas, festivos y notas.
+        </div>
+        <div class="cardsInicio">
+            <div class="datoCard" id="revIncompletosCard"></div>
+            <div class="datoCard" id="revCorreccionesCard"></div>
+            <div class="datoCard" id="revEspecialesCard"></div>
+            <div class="datoCard" id="revNotasCard"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Días a revisar</h2>
+        <div id="listaRevision" class="listaRevision"></div>
+    </div>
+</div>
+
+<div id="tab-nomina" class="tab">
+    <div class="panel">
+        <h2>Resumen de nómina estimada</h2>
+
+        Mes de nómina:
+        <select id="selectorNomina" onchange="cambiarMesNomina()"></select>
+
+        <div class="small">
+            Estimación para control de nómina. El neto usa tramos y créditos fiscales NL 2026, más una pensión estimada configurable. Sigue siendo aproximado.
+        </div>
+        <div class="cardsInicio">
+            <div class="datoCard" id="nomHorasNormales"></div>
+            <div class="datoCard" id="nomHorasVacaciones"></div>
+            <div class="datoCard" id="nomHorasBaja"></div>
+            <div class="datoCard" id="nomHorasFestivo"></div>
+            <div class="datoCard" id="nomHorasExtra"></div>
+            <div class="datoCard" id="nomTransporte"></div>
+            <div class="datoCard" id="nomBruto"></div>
+            <div class="datoCard" id="nomNeto"></div>
+            <div class="datoCard" id="nomFactor"></div>
+            <div class="datoCard" id="nomPension"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Saldo diario del mes</h2>
+        <div id="graficoSaldoDiario" class="graficoBarras"></div>
+        <div class="small">Cada barra representa el saldo de un día. Verde positivo, rojo negativo.</div>
+    </div>
+
+    <div class="panel">
+        <h2>Acumulado mensual</h2>
+        <div id="graficoAcumulado" class="graficoLinea"></div>
+        <div class="small">Muestra cómo se acumula tu saldo de horas durante el mes.</div>
+    </div>
+</div>
+
 <div id="tab-config" class="tab">
     <div class="panel">
         <h2>Configuración de jornada</h2>
 
-        Lunes-Jueves entrada: <input id="cfgEntradaLJ" placeholder="08:00"><br>
-        Lunes-Jueves salida: <input id="cfgSalidaLJ" placeholder="17:00"><br>
+        <div class="jornadaGrid">
+            <div class="head">Día</div>
+            <div class="head">Entrada</div>
+            <div class="head">Salida</div>
+            <div class="head">No pag.</div>
+            <div class="head">Activo</div>
 
-        Viernes entrada: <input id="cfgEntradaV" placeholder="08:00"><br>
-        Viernes salida: <input id="cfgSalidaV" placeholder="14:00"><br>
+            <div class="jornadaDia">Lunes</div>
+            <input id="cfgDia1Entrada" placeholder="08:00">
+            <input id="cfgDia1Salida" placeholder="17:00">
+            <input id="cfgDia1NoPagado" type="number" placeholder="30">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia1Activo"></div>
 
-        Descanso automático si se superan 6h:
-        <input id="cfgDescanso" type="number" placeholder="30"> minutos<br>
+            <div class="jornadaDia">Martes</div>
+            <input id="cfgDia2Entrada" placeholder="08:00">
+            <input id="cfgDia2Salida" placeholder="17:00">
+            <input id="cfgDia2NoPagado" type="number" placeholder="30">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia2Activo"></div>
 
-        <button class="config" onclick="guardarConfig()">Guardar configuración</button>
+            <div class="jornadaDia">Miércoles</div>
+            <input id="cfgDia3Entrada" placeholder="08:00">
+            <input id="cfgDia3Salida" placeholder="17:00">
+            <input id="cfgDia3NoPagado" type="number" placeholder="30">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia3Activo"></div>
+
+            <div class="jornadaDia">Jueves</div>
+            <input id="cfgDia4Entrada" placeholder="08:00">
+            <input id="cfgDia4Salida" placeholder="17:00">
+            <input id="cfgDia4NoPagado" type="number" placeholder="30">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia4Activo"></div>
+
+            <div class="jornadaDia">Viernes</div>
+            <input id="cfgDia5Entrada" placeholder="08:00">
+            <input id="cfgDia5Salida" placeholder="14:00">
+            <input id="cfgDia5NoPagado" type="number" placeholder="0">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia5Activo"></div>
+
+            <div class="jornadaDia">Sábado</div>
+            <input id="cfgDia6Entrada" placeholder="">
+            <input id="cfgDia6Salida" placeholder="">
+            <input id="cfgDia6NoPagado" type="number" placeholder="0">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia6Activo"></div>
+
+            <div class="jornadaDia">Domingo</div>
+            <input id="cfgDia0Entrada" placeholder="">
+            <input id="cfgDia0Salida" placeholder="">
+            <input id="cfgDia0NoPagado" type="number" placeholder="0">
+            <div class="checkCompact"><input type="checkbox" id="cfgDia0Activo"></div>
+        </div>
+<button class="config" onclick="guardarConfig()">Guardar configuración</button>
         <button class="config" onclick="aplicarConfigMes()">Aplicar configuración al mes visible</button>
 
         <div class="small">
-        Modo normal: la planificación es el valor base. Las horas reales son solo correcciones. Los días sin planificación no cuentan como laborables.
+            Marca “Activo” solo en los días que deben generar jornada por defecto. “No pag.” son minutos no pagados dentro de la franja horaria. Ejemplo: lunes-jueves 30, viernes 0.
         </div>
+    </div>
+
+    <div class="panel">
+        <h2>Config Nómina</h2>
+
+        Precio por hora bruto: <input id="cfgTarifaHora" inputmode="decimal" placeholder="Ej: 18,84"><br>
+        Multiplicador normal %: <input id="cfgMultNormal" inputmode="decimal" placeholder="100"><br>
+        Multiplicador vacaciones %: <input id="cfgMultVacaciones" inputmode="decimal" placeholder="100"><br>
+        Multiplicador baja %: <input id="cfgMultBaja" inputmode="decimal" placeholder="100"><br>
+        Multiplicador festivo %: <input id="cfgMultFestivo" inputmode="decimal" placeholder="100"><br>
+        Multiplicador horas extra %: <input id="cfgMultExtra" inputmode="decimal" placeholder="125"><br>
+        Plus transporte por día: <input id="cfgTransporteDia" inputmode="decimal" placeholder="Ej: 4,56"><br>
+Pensión estimada %: <input id="cfgPensionPct" inputmode="decimal" placeholder="Ej: 8,5425"><br>
+<div class="small">La pensión se descuenta antes de estimar el neto. Si no quieres usarla, pon 0.</div>
+
+        <select id="cfgModoTransporte">
+            <option value="laborables">Plus transporte en días laborables normales</option>
+            <option value="conReal">Solo si hay entrada o salida real</option>
+            <option value="todosPagados">Todos los días pagados</option>
+            <option value="ninguno">No calcular transporte</option>
+        </select><br>
+
+        <div class="small">
+            Usa coma o punto. Ejemplo válido: 18,84 o 18.84. Vacaciones, baja y festivo se calculan según las horas planificadas del día.
+        </div>
+
+        Fecha de entrada en vigor: <input id="cfgNominaDesde" type="date"><br>
+        <button class="config" onclick="guardarConfig()">Guardar nómina</button>
+        <button class="backup" onclick="guardarNominaComoNuevoPeriodo()">Guardar como nuevo periodo desde fecha</button>
+        <div class="small">
+            Si cambias salario o multiplicadores, usa “nuevo periodo” para no alterar meses anteriores.
+        </div>
+        <div id="historialNominaVista" class="small"></div>
+
+        <details style="margin-top:12px;">
+            <summary>Cálculo alternativo desde salario mensual</summary>
+            <br>
+            Salario mensual bruto: <input id="cfgSalarioMensual" inputmode="decimal" placeholder="Ej: 3265,60"><br>
+            Horas semanales contrato: <input id="cfgHorasSemanales" inputmode="decimal" placeholder="40"><br>
+            <div class="small">Solo se usa si dejas vacío el precio por hora.</div>
+        </details>
     </div>
 
     <div class="bloque">
@@ -166,10 +805,115 @@ let config = JSON.parse(localStorage.getItem("config_horas")) || {
     salidaLJ:"17:00",
     entradaV:"08:00",
     salidaV:"14:00",
-    descanso:30
+    descanso:30,
+    tarifaHora:"18,84",
+    multNormal:"100",
+    multVacaciones:"100",
+    multBaja:"100",
+    multFestivo:"100",
+    multExtra:"125",
+    transporteDia:"4,56",
+    modoTransporte:"laborables",
+    salarioMensual:"",
+    horasSemanales:"40"
 };
 
+function completarConfig(){
+    const defaults={
+        entradaLJ:"08:00",
+        salidaLJ:"17:00",
+        entradaV:"08:00",
+        salidaV:"14:00",
+        descanso:30,
+        tarifaHora:"",
+        multNormal:"100",
+        multVacaciones:"100",
+        multBaja:"100",
+        multFestivo:"100",
+        multExtra:"125",
+        transporteDia:"0",
+        pensionPct:"8,5425",
+        modoTransporte:"laborables",
+        salarioMensual:"",
+        horasSemanales:"40"
+    };
+    Object.keys(defaults).forEach(k=>{
+        if(config[k]===undefined) config[k]=defaults[k];
+    });
+
+    const jornadasDefault={
+        "1":{activo:true,entrada:"08:00",salida:"17:00",noPagado:30},
+        "2":{activo:true,entrada:"08:00",salida:"17:00",noPagado:30},
+        "3":{activo:true,entrada:"08:00",salida:"17:00",noPagado:30},
+        "4":{activo:true,entrada:"08:00",salida:"17:00",noPagado:30},
+        "5":{activo:true,entrada:"08:00",salida:"14:00",noPagado:0},
+        "6":{activo:false,entrada:null,salida:null,noPagado:0},
+        "0":{activo:false,entrada:null,salida:null,noPagado:0}
+    };
+
+    if(!config.jornadas){
+        config.jornadas=JSON.parse(JSON.stringify(jornadasDefault));
+        if(config.entradaLJ || config.salidaLJ || config.entradaV || config.salidaV){
+            ["1","2","3","4"].forEach(d=>{
+                config.jornadas[d]={activo:true,entrada:config.entradaLJ || "08:00",salida:config.salidaLJ || "17:00",noPagado:30};
+            });
+            config.jornadas["5"]={activo:true,entrada:config.entradaV || "08:00",salida:config.salidaV || "14:00",noPagado:0};
+        }
+    }
+
+    Object.keys(jornadasDefault).forEach(d=>{
+        if(!config.jornadas[d]) config.jornadas[d]=jornadasDefault[d];
+        if(config.jornadas[d].noPagado===undefined || config.jornadas[d].noPagado===null || config.jornadas[d].noPagado===""){
+            config.jornadas[d].noPagado=jornadasDefault[d].noPagado || 0;
+        }
+    });
+
+    if(config.descanso===undefined || config.descanso===null || config.descanso===""){
+        config.descanso=30;
+    }
+}
+completarConfig();
+
+let historialNomina = JSON.parse(localStorage.getItem("historial_nomina")) || [];
+
+function asegurarHistorialNomina(){
+    if(!Array.isArray(historialNomina)) historialNomina=[];
+
+    if(historialNomina.length===0){
+        historialNomina.push({
+            desde:"1900-01-01",
+            tarifaHora:config.tarifaHora || "",
+            multNormal:config.multNormal || "100",
+            multVacaciones:config.multVacaciones || "100",
+            multBaja:config.multBaja || "100",
+            multFestivo:config.multFestivo || "100",
+            multExtra:config.multExtra || "125",
+            transporteDia:config.transporteDia || "0",
+            pensionPct:config.pensionPct || "0",
+            modoTransporte:config.modoTransporte || "laborables",
+            salarioMensual:config.salarioMensual || "",
+            horasSemanales:config.horasSemanales || "40"
+        });
+        localStorage.setItem("historial_nomina", JSON.stringify(historialNomina));
+    }
+}
+asegurarHistorialNomina();
+
 let data =
+    JSON.parse(localStorage.getItem("horas_v22")) ||
+    JSON.parse(localStorage.getItem("horas_v21")) ||
+    JSON.parse(localStorage.getItem("horas_v20")) ||
+    JSON.parse(localStorage.getItem("horas_v19")) ||
+    JSON.parse(localStorage.getItem("horas_v18")) ||
+    JSON.parse(localStorage.getItem("horas_v17")) ||
+    JSON.parse(localStorage.getItem("horas_v16")) ||
+    JSON.parse(localStorage.getItem("horas_v15")) ||
+    JSON.parse(localStorage.getItem("horas_v14")) ||
+    JSON.parse(localStorage.getItem("horas_v13")) ||
+    JSON.parse(localStorage.getItem("horas_v12")) ||
+    JSON.parse(localStorage.getItem("horas_v11")) ||
+    JSON.parse(localStorage.getItem("horas_v10")) ||
+    JSON.parse(localStorage.getItem("horas_v9")) ||
     JSON.parse(localStorage.getItem("horas_v8")) ||
     JSON.parse(localStorage.getItem("horas_v7")) ||
     JSON.parse(localStorage.getItem("horas_v6")) ||
@@ -180,87 +924,40 @@ let data =
     [];
 
 let fechaActual = new Date();
+let fechaNomina = new Date();
 let seleccion = null;
 
 function cambiarTab(tab){
     document.querySelectorAll(".tab").forEach(x=>x.classList.remove("activa"));
     document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("activo"));
-
     document.getElementById("tab-"+tab).classList.add("activa");
     document.getElementById("btn-"+tab).classList.add("activo");
-
     render();
 }
 
 function guardar(){
-    localStorage.setItem("horas_v8", JSON.stringify(data));
+    localStorage.setItem("horas_v22", JSON.stringify(data));
     localStorage.setItem("config_horas", JSON.stringify(config));
+    localStorage.setItem("historial_nomina", JSON.stringify(historialNomina));
 }
 
 function fechaLocalStr(date = new Date()){
-    let y = date.getFullYear();
-    let m = String(date.getMonth()+1).padStart(2,"0");
-    let d = String(date.getDate()).padStart(2,"0");
+    let y=date.getFullYear();
+    let m=String(date.getMonth()+1).padStart(2,"0");
+    let d=String(date.getDate()).padStart(2,"0");
     return `${y}-${m}-${d}`;
 }
 
-function hoyStr(){
-    return fechaLocalStr(new Date());
-}
+function hoyStr(){ return fechaLocalStr(new Date()); }
+function horaActual(){ return new Date().toTimeString().slice(0,5); }
+function esFuturo(fecha){ return fecha > hoyStr(); }
+function esHoy(fecha){ return fecha === hoyStr(); }
 
-function horaActual(){
-    return new Date().toTimeString().slice(0,5);
-}
-
-function esFuturo(fecha){
-    return fecha > hoyStr();
-}
-
-function esHoy(fecha){
-    return fecha === hoyStr();
-}
-
-function yaPasoSalidaPlanificada(d){
-    if(!esHoy(d.fecha)) return true;
-    let salida = d.salidaPlan;
-    if(!salida) return false;
-    return min(horaActual()) > min(salida);
-}
-
-function cargarConfigUI(){
-    document.getElementById("cfgEntradaLJ").value = config.entradaLJ;
-    document.getElementById("cfgSalidaLJ").value = config.salidaLJ;
-    document.getElementById("cfgEntradaV").value = config.entradaV;
-    document.getElementById("cfgSalidaV").value = config.salidaV;
-    document.getElementById("cfgDescanso").value = config.descanso;
-}
-
-function guardarConfig(){
-    let eLJ = document.getElementById("cfgEntradaLJ").value.trim();
-    let sLJ = document.getElementById("cfgSalidaLJ").value.trim();
-    let eV = document.getElementById("cfgEntradaV").value.trim();
-    let sV = document.getElementById("cfgSalidaV").value.trim();
-    let descanso = parseInt(document.getElementById("cfgDescanso").value);
-
-    if(!validarHora(eLJ) || !validarHora(sLJ) || !validarHora(eV) || !validarHora(sV)){
-        return alert("Formato de hora inválido. Usa HH:MM.");
-    }
-
-    if(min(sLJ) <= min(eLJ)) return alert("Lunes-Jueves: la salida debe ser posterior a la entrada.");
-    if(min(sV) <= min(eV)) return alert("Viernes: la salida debe ser posterior a la entrada.");
-    if(isNaN(descanso) || descanso < 0 || descanso > 180) return alert("Descanso inválido.");
-
-    config = {
-        entradaLJ:eLJ,
-        salidaLJ:sLJ,
-        entradaV:eV,
-        salidaV:sV,
-        descanso:descanso
-    };
-
-    guardar();
-    render();
-    alert("Configuración guardada.");
+function parseNumero(valor){
+    if(valor===null || valor===undefined) return NaN;
+    let limpio=String(valor).trim().replace(",",".");
+    if(limpio==="") return NaN;
+    return Number(limpio);
 }
 
 function validarHora(h){
@@ -277,23 +974,35 @@ function min(h){
 function formatMin(m){
     if(m==null || isNaN(m)) return "-";
     let signo=m<0?"-":"+";
-    m=Math.abs(m);
+    m=Math.abs(Math.round(m));
     return signo + Math.floor(m/60) + "h " + (m%60) + "m";
 }
 
-function diaSemana(fecha){
-    return new Date(fecha+"T12:00:00").getDay();
+function formatHoras(m){
+    if(m==null || isNaN(m)) return "-";
+    return (m/60).toFixed(2).replace(".",",") + " h";
 }
 
+function formatEuro(valor){
+    if(valor==null || isNaN(valor)) return "€ -";
+    let signo=valor<0?"-":"";
+    valor=Math.abs(valor);
+    return signo+"€"+valor.toFixed(2).replace(".",",");
+}
+
+function formatPorcentaje(valor){
+    if(valor==null || isNaN(valor)) return "-";
+    return Math.round(valor*100)+"%";
+}
+
+function diaSemana(fecha){ return new Date(fecha+"T12:00:00").getDay(); }
+
 function planDefault(fecha){
-    let d=diaSemana(fecha);
+    let d=String(diaSemana(fecha));
+    let j=config.jornadas && config.jornadas[d];
 
-    if(d>=1 && d<=4){
-        return {entrada:config.entradaLJ, salida:config.salidaLJ};
-    }
-
-    if(d===5){
-        return {entrada:config.entradaV, salida:config.salidaV};
+    if(j && j.activo){
+        return {entrada:j.entrada || null, salida:j.salida || null, noPagado:j.noPagado || 0};
     }
 
     return {entrada:null, salida:null};
@@ -304,28 +1013,13 @@ function obtenerDia(fecha, crear=false){
 
     if(!d && crear){
         let p=planDefault(fecha);
-        d={
-            fecha:fecha,
-            tipo:"normal",
-            entradaPlan:p.entrada,
-            salidaPlan:p.salida,
-            entradaReal:null,
-            salidaReal:null
-        };
+        d={fecha,tipo:"normal",entradaPlan:p.entrada,salidaPlan:p.salida,noPagadoPlan:p.noPagado || 0,entradaReal:null,salidaReal:null};
         data.push(d);
     }
 
     if(!d){
         let p=planDefault(fecha);
-        return {
-            fecha:fecha,
-            tipo:"normal",
-            entradaPlan:p.entrada,
-            salidaPlan:p.salida,
-            entradaReal:null,
-            salidaReal:null,
-            virtual:true
-        };
+        return {fecha,tipo:"normal",entradaPlan:p.entrada,salidaPlan:p.salida,noPagadoPlan:p.noPagado || 0,entradaReal:null,salidaReal:null,virtual:true};
     }
 
     if(!d.tipo) d.tipo="normal";
@@ -334,34 +1028,65 @@ function obtenerDia(fecha, crear=false){
         let p=planDefault(fecha);
         d.entradaPlan=d.entradaPlan ?? p.entrada;
         d.salidaPlan=d.salidaPlan ?? p.salida;
+        d.noPagadoPlan=d.noPagadoPlan ?? (p.noPagado || 0);
     }
 
     if(d.entradaReal===undefined) d.entradaReal=null;
     if(d.salidaReal===undefined) d.salidaReal=null;
+    if(d.nota===undefined) d.nota="";
+    if(d.teletrabajo===undefined) d.teletrabajo=false;
+    if(d.noPagadoPlan===undefined || d.noPagadoPlan===null || d.noPagadoPlan===""){
+        let p=planDefault(fecha);
+        d.noPagadoPlan=p.noPagado || 0;
+    }
 
     return d;
 }
 
-function entradaEfectiva(d){
-    return d.entradaReal || d.entradaPlan || null;
+function entradaEfectiva(d){ return d.entradaReal || d.entradaPlan || null; }
+function salidaEfectiva(d){ return d.salidaReal || d.salidaPlan || null; }
+
+function yaPasoSalidaPlanificada(d){
+    if(!esHoy(d.fecha)) return true;
+    let salida=d.salidaPlan;
+    if(!salida) return false;
+    return min(horaActual()) > min(salida);
 }
 
-function salidaEfectiva(d){
-    return d.salidaReal || d.salidaPlan || null;
-}
 
-function calcularMinutos(entrada, salida, fecha){
+function minutosBrutos(entrada,salida){
     if(!entrada || !salida) return null;
-
     let total=min(salida)-min(entrada);
     if(total<0) return null;
+    return total;
+}
 
-    let ds=diaSemana(fecha);
-    if(total>360 && ds>=1 && ds<=5){
-        total-=config.descanso;
+function noPagadoMin(fecha,noPagado=null){
+    if(noPagado!==null && noPagado!==undefined && noPagado!==""){
+        let n=parseInt(noPagado);
+        return isNaN(n) ? 0 : n;
     }
 
-    return total;
+    let d=obtenerDia(fecha,false);
+    if(d && d.noPagadoPlan!==undefined && d.noPagadoPlan!==null){
+        let n=parseInt(d.noPagadoPlan);
+        return isNaN(n) ? 0 : n;
+    }
+
+    let p=planDefault(fecha);
+    return p.noPagado || 0;
+}
+
+function descuentoNoPagado(fecha,totalBruto,noPagado=null){
+    if(totalBruto==null || totalBruto<=0) return 0;
+    let n=noPagadoMin(fecha,noPagado);
+    return Math.max(0,Math.min(n,totalBruto));
+}
+
+function calcularMinutos(entrada,salida,fecha,noPagado=null){
+    let total=minutosBrutos(entrada,salida);
+    if(total==null) return null;
+    return total - descuentoNoPagado(fecha,total,noPagado);
 }
 
 function esLaborable(d){
@@ -371,87 +1096,459 @@ function esLaborable(d){
 
 function trabajado(d){
     if(d.tipo!=="normal") return 0;
-
     if(!esLaborable(d)) return 0;
 
-    let e = entradaEfectiva(d);
-    let s = salidaEfectiva(d);
+    let e=entradaEfectiva(d);
+    let s=salidaEfectiva(d);
 
     if(!e || !s) return null;
 
-    return calcularMinutos(e, s, d.fecha);
+    return calcularMinutos(e,s,d.fecha,d.noPagadoPlan);
 }
 
 function objetivo(d){
     if(d.tipo!=="normal") return 0;
-
     if(!d.entradaPlan && !d.salidaPlan) return 0;
     if(!d.entradaPlan || !d.salidaPlan) return null;
 
-    let total = calcularMinutos(d.entradaPlan, d.salidaPlan, d.fecha);
+    let total=calcularMinutos(d.entradaPlan,d.salidaPlan,d.fecha,d.noPagadoPlan);
     return total ?? null;
 }
 
 function saldo(d){
     let t=trabajado(d);
     let o=objetivo(d);
-
     if(t==null || o==null) return null;
-
     return t-o;
-}
-
-function saldoTotal(){
-    let total = 0;
-
-    data.forEach(d=>{
-        let s = saldo(d);
-        if(s!=null) total += s;
-    });
-
-    return total;
 }
 
 function diaIncompleto(d){
     if(esFuturo(d.fecha)) return false;
     if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
     if(d.tipo!=="normal") return false;
-
-    // Si no tiene nada, se considera no laborable y no alerta.
     if(!esLaborable(d)) return false;
-
-    // Si tiene algún dato, debe tener entrada y salida efectiva.
     return !entradaEfectiva(d) || !salidaEfectiva(d);
-}
-
-function diaRaro(d){
-    return false;
 }
 
 function diaEstimado(d){
     if(esFuturo(d.fecha)) return false;
     if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)) return false;
     if(d.tipo!=="normal") return false;
-
-    // Ya no avisamos por no tener real.
-    // Solo avisamos si el día tiene algún dato pero falta entrada o salida efectiva.
     if(!esLaborable(d)) return false;
-
     return !entradaEfectiva(d) || !salidaEfectiva(d);
 }
 
-function hayEstimadosMes(){
-    let mes=fechaActual.getMonth();
-    let año=fechaActual.getFullYear();
+
+function configNominaActualDesdeUI(){
+    return {
+        tarifaHora:document.getElementById("cfgTarifaHora").value.trim(),
+        multNormal:document.getElementById("cfgMultNormal").value.trim() || "100",
+        multVacaciones:document.getElementById("cfgMultVacaciones").value.trim() || "100",
+        multBaja:document.getElementById("cfgMultBaja").value.trim() || "100",
+        multFestivo:document.getElementById("cfgMultFestivo").value.trim() || "100",
+        multExtra:document.getElementById("cfgMultExtra").value.trim() || "125",
+        transporteDia:document.getElementById("cfgTransporteDia").value.trim() || "0",
+        pensionPct:document.getElementById("cfgPensionPct").value.trim() || "0",
+        modoTransporte:document.getElementById("cfgModoTransporte").value,
+        salarioMensual:document.getElementById("cfgSalarioMensual").value.trim(),
+        horasSemanales:document.getElementById("cfgHorasSemanales").value.trim() || "40"
+    };
+}
+
+function guardarNominaComoNuevoPeriodo(){
+    let desde=document.getElementById("cfgNominaDesde").value;
+    if(!desde) return alert("Falta fecha de entrada en vigor.");
+
+    let n=configNominaActualDesdeUI();
+
+    let camposNum=["tarifaHora","multNormal","multVacaciones","multBaja","multFestivo","multExtra","transporteDia","pensionPct","salarioMensual","horasSemanales"];
+    for(let c of camposNum){
+        if(n[c]!=="" && isNaN(parseNumero(n[c]))){
+            return alert("Valor numérico inválido en nómina: "+c);
+        }
+    }
+
+    historialNomina=historialNomina.filter(x=>x.desde!==desde);
+    historialNomina.push({desde, ...n});
+    historialNomina.sort((a,b)=>a.desde.localeCompare(b.desde));
+
+    Object.assign(config,n);
+    guardar();
+    cargarConfigUI();
+    render();
+    alert("Nuevo periodo de nómina guardado.");
+}
+
+function configNominaParaFecha(fecha){
+    asegurarHistorialNomina();
+
+    let aplicable=null;
+    historialNomina
+        .slice()
+        .sort((a,b)=>a.desde.localeCompare(b.desde))
+        .forEach(h=>{
+            if(h.desde<=fecha) aplicable=h;
+        });
+
+    return aplicable || historialNomina[0] || config;
+}
+
+function renderHistorialNomina(){
+    let cont=document.getElementById("historialNominaVista");
+    if(!cont) return;
+
+    asegurarHistorialNomina();
+
+    let html="<br><strong>Histórico de nómina:</strong><br>";
+    historialNomina
+        .slice()
+        .sort((a,b)=>a.desde.localeCompare(b.desde))
+        .forEach(h=>{
+            html += `${h.desde}: ${h.tarifaHora || "-"} €/h · extra ${h.multExtra || "125"}% · transporte ${h.transporteDia || "0"}<br>`;
+        });
+
+    cont.innerHTML=html;
+}
+
+function tarifaHoraCalculadaParaConfig(c){
+    let manual=parseNumero(c.tarifaHora);
+    if(c.tarifaHora!=="" && !isNaN(manual) && manual>0) return manual;
+
+    let salario=parseNumero(c.salarioMensual);
+    let horasSemana=parseNumero(c.horasSemanales);
+    if(!salario || !horasSemana || salario<=0 || horasSemana<=0) return null;
+
+    let horasMes=horasSemana*52/12;
+    return salario/horasMes;
+}
+
+function tarifaHoraCalculada(){
+    return tarifaHoraCalculadaParaConfig(config);
+}
+
+function mult(valor){
+    let n=parseNumero(valor);
+    if(isNaN(n)) return 1;
+    return n/100;
+}
+
+function multConfig(c,campo){
+    return mult(c[campo]);
+}
+
+function minutosBasePlan(d){
+    let m=calcularMinutos(d.entradaPlan,d.salidaPlan,d.fecha,d.noPagadoPlan);
+    return m==null ? 0 : m;
+}
+
+function minutosPagadosDia(d){
+    if(d.tipo==="normal"){
+        let t=trabajado(d);
+        return t==null ? 0 : t;
+    }
+
+    if(d.tipo==="vacaciones" || d.tipo==="baja" || d.tipo==="festivo"){
+        return minutosBasePlan(d);
+    }
+
+    return 0;
+}
+
+
+function claveMes(date){
+    let y=date.getFullYear();
+    let m=String(date.getMonth()+1).padStart(2,"0");
+    return `${y}-${m}`;
+}
+
+function fechaDesdeClaveMes(clave){
+    let [y,m]=clave.split("-").map(Number);
+    return new Date(y,m-1,1,12);
+}
+
+function mesesDisponibles(){
+    let set=new Set();
+
+    data.forEach(d=>{
+        if(d.fecha && /^\d{4}-\d{2}-\d{2}$/.test(d.fecha)){
+            set.add(d.fecha.slice(0,7));
+        }
+    });
+
+    set.add(claveMes(new Date()));
+    set.add(claveMes(fechaActual));
+    set.add(claveMes(fechaNomina));
+
+    return Array.from(set).sort();
+}
+
+function actualizarSelectorNomina(){
+    let sel=document.getElementById("selectorNomina");
+    if(!sel) return;
+
+    let actual=claveMes(fechaNomina);
+    let meses=mesesDisponibles();
+
+    sel.innerHTML="";
+    meses.forEach(m=>{
+        let opt=document.createElement("option");
+        opt.value=m;
+        let f=fechaDesdeClaveMes(m);
+        opt.textContent=f.toLocaleString("es",{month:"long",year:"numeric"});
+        sel.appendChild(opt);
+    });
+
+    sel.value=actual;
+}
+
+function cambiarMesNomina(){
+    let sel=document.getElementById("selectorNomina");
+    if(!sel || !sel.value) return;
+    fechaNomina=fechaDesdeClaveMes(sel.value);
+    render();
+}
+
+function minutosPorTipoMes(){
+    let mes=fechaNomina.getMonth();
+    let año=fechaNomina.getFullYear();
+
+    let r={
+        normal:0,
+        vacaciones:0,
+        baja:0,
+        festivo:0,
+        extra:0,
+        transporteDias:0
+    };
 
     for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
         let fecha=fechaLocalStr(new Date(año,mes,i,12));
         let d=obtenerDia(fecha,false);
+        let obj=objetivo(d);
+        let trab=trabajado(d);
+        let pag=minutosPagadosDia(d);
 
-        if(diaEstimado(d)) return true;
+        if(d.tipo==="normal"){
+            if(trab!=null){
+                let base=obj==null ? trab : Math.min(trab,obj);
+                let extra=obj==null ? 0 : Math.max(0,trab-obj);
+                r.normal+=base;
+                r.extra+=extra;
+            }
+        } else if(d.tipo==="vacaciones"){
+            r.vacaciones+=pag;
+        } else if(d.tipo==="baja"){
+            r.baja+=pag;
+        } else if(d.tipo==="festivo"){
+            r.festivo+=pag;
+        }
+
+        if(cuentaTransporte(d)) r.transporteDias++;
     }
 
-    return false;
+    return r;
+}
+
+function cuentaTransporte(d,cfg=null){
+    cfg=cfg || configNominaParaFecha(d.fecha);
+    let modo=cfg.modoTransporte || "laborables";
+
+    if(d.teletrabajo) return false;
+    if(modo==="ninguno") return false;
+    if(modo==="conReal") return !!(d.entradaReal || d.salidaReal);
+    if(modo==="todosPagados") return minutosPagadosDia(d)>0;
+
+    // laborables normales: jornada normal con horas pagadas. No vacaciones/baja/festivo.
+    return d.tipo==="normal" && minutosPagadosDia(d)>0;
+}
+
+
+function valorBrutoDia(d){
+    let cfg=configNominaParaFecha(d.fecha);
+    let tarifa=tarifaHoraCalculadaParaConfig(cfg);
+    if(tarifa==null) return 0;
+
+    let total=0;
+    let obj=objetivo(d);
+    let trab=trabajado(d);
+
+    if(d.tipo==="normal"){
+        if(trab!=null){
+            let base=obj==null ? trab : Math.min(trab,obj);
+            let extra=obj==null ? 0 : Math.max(0,trab-obj);
+            total += (base/60)*tarifa*multConfig(cfg,"multNormal");
+            total += (extra/60)*tarifa*multConfig(cfg,"multExtra");
+        }
+    } else if(d.tipo==="vacaciones"){
+        total += (minutosPagadosDia(d)/60)*tarifa*multConfig(cfg,"multVacaciones");
+    } else if(d.tipo==="baja"){
+        total += (minutosPagadosDia(d)/60)*tarifa*multConfig(cfg,"multBaja");
+    } else if(d.tipo==="festivo"){
+        total += (minutosPagadosDia(d)/60)*tarifa*multConfig(cfg,"multFestivo");
+    }
+
+    let transporte=parseNumero(cfg.transporteDia);
+    if(cuentaTransporte(d,cfg) && !isNaN(transporte) && transporte>0){
+        total += transporte;
+    }
+
+    return total;
+}
+
+function valorBrutoNominaMes(){
+    let mes=fechaNomina.getMonth();
+    let año=fechaNomina.getFullYear();
+    let total=0;
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+        total += valorBrutoDia(d);
+    }
+
+    return total;
+}
+
+function valorSaldoMes(){
+    let tarifa=tarifaHoraCalculadaParaConfig(configNominaParaFecha(fechaLocalStr(fechaActual)));
+    if(tarifa==null) return null;
+    return (saldoMesActual()/60) * tarifa;
+}
+
+function impuestoBox1_2026(brutoAnual){
+    let impuesto=0;
+
+    if(brutoAnual<=38883){
+        impuesto=brutoAnual*0.3575;
+    } else if(brutoAnual<=78426){
+        impuesto=38883*0.3575 + (brutoAnual-38883)*0.3756;
+    } else {
+        impuesto=38883*0.3575 + (78426-38883)*0.3756 + (brutoAnual-78426)*0.495;
+    }
+
+    return impuesto;
+}
+
+function algemeneHeffingskorting2026(ingresoAnual){
+    let c=0;
+
+    if(ingresoAnual<=29736){
+        c=3115;
+    } else if(ingresoAnual<=78426){
+        c=3115 - 0.06398*(ingresoAnual-29736);
+    } else {
+        c=0;
+    }
+
+    return Math.max(0,c);
+}
+
+function arbeidskorting2026(ingresoAnual){
+    let c=0;
+
+    if(ingresoAnual<=11965){
+        c=0.08324*ingresoAnual;
+    } else if(ingresoAnual<=25845){
+        c=996 + 0.31009*(ingresoAnual-11965);
+    } else if(ingresoAnual<=45592){
+        c=5300 + 0.01950*(ingresoAnual-25845);
+    } else if(ingresoAnual<=132920){
+        c=5685 - 0.06510*(ingresoAnual-45592);
+    } else {
+        c=0;
+    }
+
+    return Math.max(0,c);
+}
+
+function pensionEstimacionMensual(brutoMensual,cfg=null){
+    cfg=cfg || configNominaParaFecha(fechaLocalStr(fechaNomina));
+    let p=parseNumero(cfg.pensionPct);
+    if(isNaN(p) || p<=0 || brutoMensual==null || isNaN(brutoMensual)) return 0;
+
+    // Aproximación: porcentaje sobre bruto mensual. En la nómina real puede aplicarse sobre una base distinta.
+    return brutoMensual*(p/100);
+}
+
+function netoFiscal2026DesdeBruto(brutoMensual){
+    if(brutoMensual==null || isNaN(brutoMensual) || brutoMensual<=0) return null;
+
+    let pensionMensual=pensionEstimacionMensual(brutoMensual);
+    let baseMensual=Math.max(0, brutoMensual-pensionMensual);
+    let brutoAnual=baseMensual*12;
+
+    let impuestoBruto=impuestoBox1_2026(brutoAnual);
+    let creditos=algemeneHeffingskorting2026(brutoAnual)+arbeidskorting2026(brutoAnual);
+    let loonheffing=Math.max(0, impuestoBruto-creditos);
+
+    let netoAnual=brutoAnual-loonheffing;
+    return netoAnual/12;
+}
+
+function factorNetoAutomatico(brutoMensual){
+    let neto=netoFiscal2026DesdeBruto(brutoMensual);
+    if(neto==null || brutoMensual==null || brutoMensual<=0) return null;
+    return neto/brutoMensual;
+}
+
+function netoEstimadoDesdeBruto(brutoMensual){
+    return netoFiscal2026DesdeBruto(brutoMensual);
+}
+
+function lunesSemanaActual(){
+    let hoy=new Date();
+    let dia=hoy.getDay();
+    let diff=dia===0 ? -6 : 1-dia;
+    let lunes=new Date(hoy);
+    lunes.setDate(hoy.getDate()+diff);
+    lunes.setHours(12,0,0,0);
+    return lunes;
+}
+
+function saldoSemanaActual(){
+    let lunes=lunesSemanaActual();
+    let total=0;
+
+    for(let i=0;i<7;i++){
+        let fechaObj=new Date(lunes);
+        fechaObj.setDate(lunes.getDate()+i);
+        let fecha=fechaLocalStr(fechaObj);
+        let d=obtenerDia(fecha,false);
+        let s=saldo(d);
+        if(s!=null) total+=s;
+    }
+
+    return total;
+}
+
+function estimadosSemanaActual(){
+    let lunes=lunesSemanaActual();
+    let total=0;
+
+    for(let i=0;i<7;i++){
+        let fechaObj=new Date(lunes);
+        fechaObj.setDate(lunes.getDate()+i);
+        let fecha=fechaLocalStr(fechaObj);
+        let d=obtenerDia(fecha,false);
+        if(diaEstimado(d)) total++;
+    }
+
+    return total;
+}
+
+function saldoMesActual(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+    let total=0;
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+        let s=saldo(d);
+        if(s!=null) total+=s;
+    }
+
+    return total;
 }
 
 function contarEstimadosMes(){
@@ -462,21 +1559,109 @@ function contarEstimadosMes(){
     for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
         let fecha=fechaLocalStr(new Date(año,mes,i,12));
         let d=obtenerDia(fecha,false);
-
         if(diaEstimado(d)) total++;
     }
 
     return total;
 }
 
+function claseSaldoVisual(v){
+    if(v>0) return "saldoPos";
+    if(v<0) return "saldoNeg";
+    return "saldoCero";
+}
+
+function cargarConfigUI(){
+    ["1","2","3","4","5","6","0"].forEach(d=>{
+        let j=config.jornadas[d] || {activo:false,entrada:null,salida:null,noPagado:0};
+        document.getElementById("cfgDia"+d+"Entrada").value=j.entrada || "";
+        document.getElementById("cfgDia"+d+"Salida").value=j.salida || "";
+        document.getElementById("cfgDia"+d+"NoPagado").value=j.noPagado ?? 0;
+        document.getElementById("cfgDia"+d+"Activo").checked=!!j.activo;
+    });
+    document.getElementById("cfgDescanso").value=config.descanso;
+    document.getElementById("cfgTarifaHora").value=config.tarifaHora;
+    document.getElementById("cfgMultNormal").value=config.multNormal;
+    document.getElementById("cfgMultVacaciones").value=config.multVacaciones;
+    document.getElementById("cfgMultBaja").value=config.multBaja;
+    document.getElementById("cfgMultFestivo").value=config.multFestivo;
+    document.getElementById("cfgMultExtra").value=config.multExtra;
+    document.getElementById("cfgTransporteDia").value=config.transporteDia;
+    document.getElementById("cfgPensionPct").value=config.pensionPct;
+    document.getElementById("cfgModoTransporte").value=config.modoTransporte;
+    document.getElementById("cfgSalarioMensual").value=config.salarioMensual;
+    document.getElementById("cfgHorasSemanales").value=config.horasSemanales;
+    let desde=document.getElementById("cfgNominaDesde");
+    if(desde) desde.value=hoyStr();
+    renderHistorialNomina();
+}
+
+function guardarConfig(){
+    let jornadas={};
+
+    for(let d of ["1","2","3","4","5","6","0"]){
+        let entrada=document.getElementById("cfgDia"+d+"Entrada").value.trim();
+        let salida=document.getElementById("cfgDia"+d+"Salida").value.trim();
+        let activo=document.getElementById("cfgDia"+d+"Activo").checked;
+        let noPagado=parseInt(document.getElementById("cfgDia"+d+"NoPagado").value);
+        if(isNaN(noPagado)) noPagado=0;
+
+        if(!validarHora(entrada) || !validarHora(salida)){
+            return alert("Formato de hora inválido. Usa HH:MM.");
+        }
+
+        if(activo && (!entrada || !salida)){
+            return alert("Si un día está activo, debe tener entrada y salida.");
+        }
+
+        if(entrada && salida && min(salida)<=min(entrada)){
+            return alert("En un día activo, la salida debe ser posterior a la entrada.");
+        }
+
+        if(noPagado<0 || noPagado>300){
+            return alert("Minutos no pagados inválidos.");
+        }
+
+        jornadas[d]={activo:activo,entrada:entrada || null,salida:salida || null,noPagado:noPagado};
+    }
+
+    config={
+        entradaLJ:jornadas["1"].entrada || "08:00",
+        salidaLJ:jornadas["1"].salida || "17:00",
+        entradaV:jornadas["5"].entrada || "08:00",
+        salidaV:jornadas["5"].salida || "14:00",
+        jornadas:jornadas,
+        descanso:0,
+        tarifaHora:document.getElementById("cfgTarifaHora").value.trim(),
+        multNormal:document.getElementById("cfgMultNormal").value.trim() || "100",
+        multVacaciones:document.getElementById("cfgMultVacaciones").value.trim() || "100",
+        multBaja:document.getElementById("cfgMultBaja").value.trim() || "100",
+        multFestivo:document.getElementById("cfgMultFestivo").value.trim() || "100",
+        multExtra:document.getElementById("cfgMultExtra").value.trim() || "125",
+        transporteDia:document.getElementById("cfgTransporteDia").value.trim() || "0",
+        pensionPct:document.getElementById("cfgPensionPct").value.trim() || "0",
+        modoTransporte:document.getElementById("cfgModoTransporte").value,
+        salarioMensual:document.getElementById("cfgSalarioMensual").value.trim(),
+        horasSemanales:document.getElementById("cfgHorasSemanales").value.trim() || "40"
+    };
+
+    let camposNum=["tarifaHora","multNormal","multVacaciones","multBaja","multFestivo","multExtra","transporteDia","pensionPct","salarioMensual","horasSemanales"];
+    for(let c of camposNum){
+        if(config[c]!=="" && isNaN(parseNumero(config[c]))){
+            return alert("Valor numérico inválido en nómina: "+c);
+        }
+    }
+
+    guardar();
+    render();
+    alert("Configuración guardada.");
+}
+
 function marcarEntrada(){
     let fecha=hoyStr();
     let d=obtenerDia(fecha,true);
-
-    if(d.tipo!=="normal") return alert("Hoy está marcado como " + d.tipo + ".");
-
+    if(d.tipo!=="normal") return alert("Hoy está marcado como "+d.tipo+".");
     d.entradaReal=horaActual();
-
     guardar();
     render();
 }
@@ -484,14 +1669,19 @@ function marcarEntrada(){
 function marcarSalida(){
     let fecha=hoyStr();
     let d=obtenerDia(fecha,true);
-
-    if(d.tipo!=="normal") return alert("Hoy está marcado como " + d.tipo + ".");
+    if(d.tipo!=="normal") return alert("Hoy está marcado como "+d.tipo+".");
     if(!entradaEfectiva(d)) return alert("No hay entrada planificada ni real.");
-
     d.salidaReal=horaActual();
-
     guardar();
     render();
+}
+
+function editarHoy(){ abrirDia(hoyStr()); }
+
+function editarAyer(){
+    let ayer=new Date();
+    ayer.setDate(ayer.getDate()-1);
+    abrirDia(fechaLocalStr(ayer));
 }
 
 function generarMes(){
@@ -502,18 +1692,9 @@ function generarMes(){
     for(let i=1;i<=dias;i++){
         let fecha=fechaLocalStr(new Date(año,mes,i,12));
         if(data.find(x=>x.fecha===fecha)) continue;
-
         let p=planDefault(fecha);
         if(!p.entrada || !p.salida) continue;
-
-        data.push({
-            fecha:fecha,
-            tipo:"normal",
-            entradaPlan:p.entrada,
-            salidaPlan:p.salida,
-            entradaReal:null,
-            salidaReal:null
-        });
+        data.push({fecha,tipo:"normal",entradaPlan:p.entrada,salidaPlan:p.salida,entradaReal:null,salidaReal:null});
     }
 
     guardar();
@@ -529,14 +1710,12 @@ function aplicarConfigMes(){
     for(let i=1;i<=dias;i++){
         let fecha=fechaLocalStr(new Date(año,mes,i,12));
         let p=planDefault(fecha);
-
         if(!p.entrada || !p.salida) continue;
-
         let d=obtenerDia(fecha,true);
-
         if(d.tipo==="normal"){
             d.entradaPlan=p.entrada;
             d.salidaPlan=p.salida;
+            d.noPagadoPlan=p.noPagado || 0;
         }
     }
 
@@ -556,10 +1735,7 @@ function aplicarBloque(){
     if(!desde || !hasta) return alert("Faltan fechas.");
     if(new Date(desde)>new Date(hasta)) return alert("El rango está mal.");
     if(!validarHora(entradaPlan) || !validarHora(salidaPlan)) return alert("Hora inválida. Usa HH:MM.");
-
-    if(entradaPlan && salidaPlan && min(salidaPlan) <= min(entradaPlan)){
-        return alert("La salida planificada no puede ser menor o igual que la entrada.");
-    }
+    if(entradaPlan && salidaPlan && min(salidaPlan)<=min(entradaPlan)) return alert("La salida planificada no puede ser menor o igual que la entrada.");
 
     let actual=new Date(desde+"T12:00:00");
     let fin=new Date(hasta+"T12:00:00");
@@ -574,20 +1750,22 @@ function aplicarBloque(){
         }
 
         let d=obtenerDia(fecha,true);
-
         d.tipo=tipo;
 
         if(tipo==="normal"){
             if(entradaPlan) d.entradaPlan=entradaPlan;
             if(salidaPlan) d.salidaPlan=salidaPlan;
         } else {
-            d.entradaPlan=null;
-            d.salidaPlan=null;
+            // Para vacaciones/baja/festivo mantiene o asigna planificación para poder pagar el día.
+            let p=planDefault(fecha);
+            d.entradaPlan=entradaPlan || d.entradaPlan || p.entrada;
+            d.salidaPlan=salidaPlan || d.salidaPlan || p.salida;
+            d.noPagadoPlan=d.noPagadoPlan ?? (p.noPagado || 0);
             d.entradaReal=null;
             d.salidaReal=null;
         }
 
-        if(modo==="sobrescribir"){
+        if(modo==="sobrescribir" && tipo==="normal"){
             d.entradaReal=null;
             d.salidaReal=null;
         }
@@ -610,20 +1788,15 @@ function abrirDia(fecha){
     document.getElementById("panel").classList.remove("editorOculto");
     let d=obtenerDia(fecha,true);
 
-    let aviso = "";
-
+    let aviso="";
     if(!esLaborable(d) && d.tipo==="normal"){
-        aviso = `<div class="small">Día no laborable. No cuenta hasta que añadas planificación o una hora real.</div>`;
+        aviso=`<div class="small">Día no laborable. No cuenta hasta que añadas planificación o una hora real.</div>`;
     } else if(esFuturo(d.fecha)){
-        aviso = `<div class="small">Día futuro. No se considera pendiente todavía.</div>`;
+        aviso=`<div class="small">Día futuro. No se considera pendiente todavía.</div>`;
     } else if(esHoy(d.fecha) && !yaPasoSalidaPlanificada(d)){
-        aviso = `<div class="small">Hoy todavía no ha terminado la jornada planificada. No se considera error.</div>`;
+        aviso=`<div class="small">Hoy todavía no ha terminado la jornada planificada. No se considera error.</div>`;
     } else if(diaIncompleto(d)){
-        aviso = `<div class="alerta">⚠️ Falta entrada o salida. No hay dato real ni planificado suficiente.</div>`;
-    } else if(diaRaro(d)){
-        aviso = `<div class="alerta">⚠️ Falta entrada o salida. No hay dato real ni planificado suficiente.</div>`;
-    } else if(diaEstimado(d)){
-        aviso = `<div class="alerta">⚠️ Día incompleto: falta planificación o corrección real.</div>`;
+        aviso=`<div class="alerta">⚠️ Falta entrada o salida. No hay dato real ni planificado suficiente.</div>`;
     }
 
     document.getElementById("panel").innerHTML=`
@@ -638,23 +1811,32 @@ function abrirDia(fecha){
             <option value="festivo">Festivo</option>
         </select><br>
 
+        <label class="small">
+            <input type="checkbox" id="teletrabajoDia" ${d.teletrabajo ? "checked" : ""}>
+            Teletrabajo
+        </label><br>
+
         <h3>Planificado</h3>
         Entrada planificada: <input id="entradaPlan" value="${d.entradaPlan||""}" placeholder="08:00"><br>
         Salida planificada: <input id="salidaPlan" value="${d.salidaPlan||""}" placeholder="17:00"><br>
+        Minutos no pagados: <input id="noPagadoPlan" type="number" value="${d.noPagadoPlan ?? 0}" placeholder="30"><br>
 
-        <h3>Real opcional</h3>
-        Entrada real: <input id="entradaReal" value="${d.entradaReal||""}" placeholder="Déjalo vacío para usar plan"><br>
-        Salida real: <input id="salidaReal" value="${d.salidaReal||""}" placeholder="Déjalo vacío para usar plan"><br>
+        <h3>Real / corrección opcional</h3>
+        Entrada real: <input id="entradaReal" value="${d.entradaReal||""}" placeholder="Vacío = usa plan"><br>
+        Salida real: <input id="salidaReal" value="${d.salidaReal||""}" placeholder="Vacío = usa plan"><br>
+
+        <h3>Notas</h3>
+        <textarea id="notaDia" placeholder="Ej: salí antes por planta, olvidé fichar, cambio de turno...">${d.nota||""}</textarea>
 
         <div class="small">
-        No estás obligado a meter horas reales. Si lo dejas vacío, se usa la planificación como horario válido. Solo se avisa si falta planificación y tampoco hay dato real.
+        Si no hay planificación ni hora real, el día no cuenta como laborable. Si hay planificación, el real solo corrige.
         </div>
 
-        <button class="config" onclick="usarPlanificacionDia()">Borrar corrección real y usar planificación</button>
-
         <br>
-        Objetivo: ${formatMin(objetivo(d))}<br>
-        Trabajado: ${formatMin(trabajado(d))}<br>
+        Bruto: ${formatMin(minutosBrutos(entradaEfectiva(d),salidaEfectiva(d)))}<br>
+        No pagado: ${descuentoNoPagado(d.fecha,minutosBrutos(entradaEfectiva(d),salidaEfectiva(d)) || 0,d.noPagadoPlan)} min<br>
+        Objetivo neto: ${formatMin(objetivo(d))}<br>
+        Trabajado/Pagado neto: ${formatMin(minutosPagadosDia(d))}<br>
         Saldo: ${formatMin(saldo(d))}<br>
 
         <button class="guardar" onclick="guardarDia()">Guardar día</button>
@@ -665,25 +1847,10 @@ function abrirDia(fecha){
     document.getElementById("tipoDia").value=d.tipo;
 }
 
-
-function usarPlanificacionDia(){
-    let d=obtenerDia(seleccion,true);
-
-    d.entradaReal=null;
-    d.salidaReal=null;
-
-    guardar();
-    render();
-    abrirDia(seleccion);
-
-    alert("Día dejado con planificación automática.");
-}
-
-
 function cerrarEditor(){
-    seleccion = null;
+    seleccion=null;
     document.getElementById("panel").classList.add("editorOculto");
-    document.getElementById("panel").innerHTML = "";
+    document.getElementById("panel").innerHTML="";
 }
 
 function guardarDia(){
@@ -692,31 +1859,31 @@ function guardarDia(){
     let tipo=document.getElementById("tipoDia").value;
     let ep=document.getElementById("entradaPlan").value.trim();
     let sp=document.getElementById("salidaPlan").value.trim();
+    let noPagado=parseInt(document.getElementById("noPagadoPlan").value);
+    if(isNaN(noPagado)) noPagado=0;
     let er=document.getElementById("entradaReal").value.trim();
     let sr=document.getElementById("salidaReal").value.trim();
+    let nota=document.getElementById("notaDia").value.trim();
+    let teletrabajo=document.getElementById("teletrabajoDia").checked;
 
     if(!validarHora(ep) || !validarHora(sp) || !validarHora(er) || !validarHora(sr)){
         return alert("Formato de hora inválido. Usa HH:MM.");
     }
-
-    if(ep && sp && min(sp) <= min(ep)){
-        return alert("La salida planificada no puede ser menor o igual que la entrada.");
-    }
-
-    if(er && sr && min(sr) <= min(er)){
-        return alert("La salida real no puede ser menor o igual que la entrada.");
-    }
+    if(ep && sp && min(sp)<=min(ep)) return alert("La salida planificada no puede ser menor o igual que la entrada.");
+    if(er && sr && min(sr)<=min(er)) return alert("La salida real no puede ser menor o igual que la entrada.");
+    if(noPagado<0 || noPagado>300) return alert("Minutos no pagados inválidos.");
 
     d.tipo=tipo;
+    d.entradaPlan=ep || null;
+    d.salidaPlan=sp || null;
+    d.noPagadoPlan=noPagado;
+    d.nota=nota || "";
+    d.teletrabajo=teletrabajo;
 
     if(tipo==="normal"){
-        d.entradaPlan=ep || null;
-        d.salidaPlan=sp || null;
         d.entradaReal=er || null;
         d.salidaReal=sr || null;
     } else {
-        d.entradaPlan=null;
-        d.salidaPlan=null;
         d.entradaReal=null;
         d.salidaReal=null;
     }
@@ -733,101 +1900,39 @@ function eliminarDia(){
     cerrarEditor();
 }
 
-
-function lunesSemanaActual(){
-    let hoy = new Date();
-    let dia = hoy.getDay();
-    let diff = dia === 0 ? -6 : 1 - dia;
-    let lunes = new Date(hoy);
-    lunes.setDate(hoy.getDate() + diff);
-    lunes.setHours(12,0,0,0);
-    return lunes;
-}
-
-function saldoSemanaActual(){
-    let lunes = lunesSemanaActual();
-    let total = 0;
-
-    for(let i=0;i<7;i++){
-        let fechaObj = new Date(lunes);
-        fechaObj.setDate(lunes.getDate()+i);
-        let fecha = fechaLocalStr(fechaObj);
-        let d = obtenerDia(fecha,false);
-        let s = saldo(d);
-        if(s!=null) total += s;
-    }
-
-    return total;
-}
-
-function estimadosSemanaActual(){
-    let lunes = lunesSemanaActual();
-    let total = 0;
-
-    for(let i=0;i<7;i++){
-        let fechaObj = new Date(lunes);
-        fechaObj.setDate(lunes.getDate()+i);
-        let fecha = fechaLocalStr(fechaObj);
-        let d = obtenerDia(fecha,false);
-        if(diaEstimado(d)) total++;
-    }
-
-    return total;
-}
-
-function editarHoy(){
-    abrirDia(hoyStr());
-}
-
-function editarAyer(){
-    let ayer = new Date();
-    ayer.setDate(ayer.getDate()-1);
-    abrirDia(fechaLocalStr(ayer));
-}
-
 function resumenSemana(){
-    let texto = "Saldo semana: " + formatMin(saldoSemanaActual());
-    let est = estimadosSemanaActual();
+    let texto="Saldo semana: "+formatMin(saldoSemanaActual());
+    let est=estimadosSemanaActual();
 
-    if(est > 0){
-        texto += "<br><span class='alerta'>⚠️ Hay " + est + " día(s) incompleto(s) esta semana</span>";
+    if(est>0){
+        texto += "<br><span class='alerta'>⚠️ Hay "+est+" día(s) incompleto(s) esta semana</span>";
     }
 
-    document.getElementById("resumenSemana").innerHTML = texto;
+    document.getElementById("resumenSemana").innerHTML=texto;
 }
 
 function resumenMes(){
-    let mes=fechaActual.getMonth();
-    let año=fechaActual.getFullYear();
-    let total=0;
+    let total=saldoMesActual();
+    let texto="Saldo mes: "+formatMin(total);
+    let est=contarEstimadosMes();
 
-    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
-        let fecha=fechaLocalStr(new Date(año,mes,i,12));
-        let d=obtenerDia(fecha,false);
-        let s=saldo(d);
-        if(s!=null) total+=s;
+    if(est>0){
+        texto += "<br><span class='alerta'>⚠️ Hay "+est+" día(s) incompleto(s) este mes</span>";
     }
 
-    let texto = "Saldo mes: " + formatMin(total);
-
-    if(hayEstimadosMes()){
-        texto += "<br><span class='alerta'>⚠️ Hay " + contarEstimadosMes() + " día(s) incompleto(s) este mes</span>";
-    }
-
-    document.getElementById("resumenMes").innerHTML = texto;
+    document.getElementById("resumenMes").innerHTML=texto;
 }
 
 function estadoHoy(){
     let d=obtenerDia(hoyStr(),false);
-
-    if(d.tipo!=="normal") return "Hoy: " + d.tipo;
+    if(d.tipo!=="normal") return "Hoy: "+d.tipo;
 
     let er=d.entradaReal ? "real" : "plan";
     let sr=d.salidaReal ? "real" : "plan";
 
-    let aviso = "";
+    let aviso="";
     if(diaEstimado(d)){
-        aviso = "<br><span class='alerta'>⚠️ Hoy ya debería estar completo y falta planificación o dato real</span>";
+        aviso="<br><span class='alerta'>⚠️ Hoy ya debería estar completo y falta planificación o dato real</span>";
     }
 
     return `
@@ -837,96 +1942,10 @@ function estadoHoy(){
     `;
 }
 
-function exportarJSON(){
-    let paquete = {
-        version:"mis_horas_v14_editor_desplegable",
-        fechaExportacion:new Date().toISOString(),
-        config:config,
-        data:data
-    };
-
-    let blob = new Blob([JSON.stringify(paquete, null, 2)], {type:"application/json"});
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "mis_horas_backup.json";
-    a.click();
-}
-
-function importarJSON(){
-    document.getElementById("fileInput").click();
-}
-
-document.getElementById("fileInput").addEventListener("change", function(e){
-    let file = e.target.files[0];
-    if(!file) return;
-
-    let reader = new FileReader();
-
-    reader.onload = function(){
-        try{
-            let importado = JSON.parse(reader.result);
-
-            if(Array.isArray(importado)){
-                data = importado;
-            } else if(importado.data && Array.isArray(importado.data)){
-                data = importado.data;
-                if(importado.config) config = importado.config;
-            } else {
-                return alert("Archivo inválido.");
-            }
-
-            guardar();
-            cargarConfigUI();
-            render();
-            alert("Backup importado correctamente.");
-        }catch{
-            alert("Error al cargar archivo.");
-        }
-    };
-
-    reader.readAsText(file);
-});
-
-function exportarCSV(){
-    let ordenado = [...data].sort((a,b)=>a.fecha.localeCompare(b.fecha));
-
-    let filas=[
-        ["Fecha","Tipo","Entrada Plan","Salida Plan","Entrada Real","Salida Real","Objetivo min","Trabajado min","Saldo min","Objetivo","Trabajado","Saldo","Incompleto"]
-    ];
-
-    ordenado.forEach(d=>{
-        filas.push([
-            d.fecha,
-            d.tipo || "normal",
-            d.entradaPlan || "",
-            d.salidaPlan || "",
-            d.entradaReal || "",
-            d.salidaReal || "",
-            objetivo(d) ?? "",
-            trabajado(d) ?? "",
-            saldo(d) ?? "",
-            formatMin(objetivo(d)),
-            formatMin(trabajado(d)),
-            formatMin(saldo(d)),
-            diaEstimado(d) ? "Sí" : "No"
-        ]);
-    });
-
-    let csv = filas.map(f=>f.map(c=>`"${String(c).replaceAll('"','""')}"`).join(";")).join("\n");
-
-    let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
-    let a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="mis_horas.csv";
-    a.click();
-}
-
-
 function actualizarBotonesHoy(){
-    let d = obtenerDia(hoyStr(), false);
-
-    let btnEntrada = document.getElementById("btnEntradaReal");
-    let btnSalida = document.getElementById("btnSalidaReal");
+    let d=obtenerDia(hoyStr(),false);
+    let btnEntrada=document.getElementById("btnEntradaReal");
+    let btnSalida=document.getElementById("btnSalidaReal");
 
     if(!btnEntrada || !btnSalida) return;
 
@@ -934,23 +1953,294 @@ function actualizarBotonesHoy(){
     btnSalida.classList.remove("marcado");
 
     if(d.entradaReal){
-        btnEntrada.innerText = "ENTRADA: " + d.entradaReal;
+        btnEntrada.innerText="ENTRADA: "+d.entradaReal;
         btnEntrada.classList.add("marcado");
     } else {
-        btnEntrada.innerText = "ENTRAR REAL";
+        btnEntrada.innerText="ENTRAR REAL";
     }
 
     if(d.salidaReal){
-        btnSalida.innerText = "SALIDA: " + d.salidaReal;
+        btnSalida.innerText="SALIDA: "+d.salidaReal;
         btnSalida.classList.add("marcado");
     } else {
-        btnSalida.innerText = "SALIR REAL";
+        btnSalida.innerText="SALIR REAL";
     }
 }
 
-function render(){
-    document.getElementById("estado").innerHTML=estadoHoy();
+function renderCardsInicio(){
+    let dHoy=obtenerDia(hoyStr(),false);
+    let sHoy=saldo(dHoy);
+    let sSemana=saldoSemanaActual();
+    let sMes=saldoMesActual();
+    let bruto=valorBrutoNominaMes();
+    let neto=netoEstimadoDesdeBruto(bruto);
+    let valorSaldo=valorSaldoMes();
 
+    let estadoHoyChip = "";
+    if(diaIncompleto(dHoy)){
+        estadoHoyChip = `<span class="estadoChip chipError">INCOMPLETO</span>`;
+    } else if(dHoy.entradaReal || dHoy.salidaReal){
+        estadoHoyChip = `<span class="estadoChip chipOk">CON CORRECCIÓN REAL</span>`;
+    } else if(esLaborable(dHoy)){
+        estadoHoyChip = `<span class="estadoChip chipOk">SEGÚN PLAN</span>`;
+    } else {
+        estadoHoyChip = `<span class="estadoChip chipAviso">NO LABORAL</span>`;
+    }
+
+    document.getElementById("cardHoy").classList.add("kpiPrincipal");
+    document.getElementById("cardSemana").classList.add("kpiSecundario");
+    document.getElementById("cardMes").classList.add("kpiSecundario");
+
+    document.getElementById("cardHoy").innerHTML=`
+        <div class="datoTitulo">HOY</div>
+        <div class="datoLinea">${entradaEfectiva(dHoy)||"-"} → ${salidaEfectiva(dHoy)||"-"}</div>
+        <div class="datoValor ${claseSaldoVisual(sHoy)}">${formatMin(sHoy)}</div>
+        ${estadoHoyChip}
+    `;
+
+    document.getElementById("cardSemana").innerHTML=`
+        <div class="datoTitulo">SEMANA</div>
+        <div class="datoValor ${claseSaldoVisual(sSemana)}">${formatMin(sSemana)}</div>
+    `;
+
+    document.getElementById("cardMes").innerHTML=`
+        <div class="datoTitulo">MES</div>
+        <div class="datoValor ${claseSaldoVisual(sMes)}">${formatMin(sMes)}</div>
+    `;
+
+    document.getElementById("cardBrutoMes").innerHTML=`
+        <div class="datoTitulo">BRUTO ESTIMADO</div>
+        <div class="datoValor">${formatEuro(bruto)}</div>
+    `;
+
+    document.getElementById("cardNetoMes").innerHTML=`
+        <div class="datoTitulo">NETO ESTIMADO</div>
+        <div class="datoValor">${formatEuro(neto)}</div>
+    `;
+
+    document.getElementById("cardValorSaldoMes").innerHTML=`
+        <div class="datoTitulo">VALOR SALDO</div>
+        <div class="datoValor ${claseSaldoVisual(sMes)}">${formatEuro(valorSaldo)}</div>
+    `;
+}
+
+function datosMesActual(){
+    let mes=fechaNomina.getMonth();
+    let año=fechaNomina.getFullYear();
+    let dias=[];
+    let acumulado=0;
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+        let s=saldo(d);
+        if(s==null) s=0;
+        acumulado+=s;
+        dias.push({fecha,dia:i,saldo:s,acumulado});
+    }
+
+    return dias;
+}
+
+
+
+function textoBrutoComida(d){
+    let bruto=minutosBrutos(entradaEfectiva(d),salidaEfectiva(d));
+    if(bruto==null) return "";
+    let comida=descuentoNoPagado(d.fecha,bruto,d.noPagadoPlan);
+    if(comida>0){
+        return `bruto ${formatMin(bruto)} · comida -${comida}m`;
+    }
+    return `bruto ${formatMin(bruto)} · sin comida`;
+}
+
+function textoPlanBrutoComida(d){
+    let bruto=minutosBrutos(d.entradaPlan,d.salidaPlan);
+    if(bruto==null) return "";
+    let comida=descuentoNoPagado(d.fecha,bruto,d.noPagadoPlan);
+    if(comida>0){
+        return `plan bruto ${formatMin(bruto)} · comida -${comida}m`;
+    }
+    return `plan bruto ${formatMin(bruto)} · sin comida`;
+}
+
+function detallesNominaMes(){
+    let mes=fechaNomina.getMonth();
+    let año=fechaNomina.getFullYear();
+
+    let detalles={
+        normal:[],
+        vacaciones:[],
+        baja:[],
+        festivo:[],
+        extra:[],
+        transporte:[]
+    };
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+        let obj=objetivo(d);
+        let trab=trabajado(d);
+        let pag=minutosPagadosDia(d);
+
+        if(d.tipo==="normal" && trab!=null && trab>0){
+            let base=obj==null ? trab : Math.min(trab,obj);
+            let extra=obj==null ? 0 : Math.max(0,trab-obj);
+
+            if(base>0){
+                detalles.normal.push({fecha:fecha,texto:(entradaEfectiva(d)||"-")+"–"+(salidaEfectiva(d)||"-")+" · "+textoBrutoComida(d),minutos:base});
+            }
+
+            if(extra>0){
+                detalles.extra.push({fecha:fecha,texto:"extra sobre objetivo "+formatMin(obj),minutos:extra});
+            }
+        }
+
+        if(d.tipo==="vacaciones" && pag>0) detalles.vacaciones.push({fecha:fecha,texto:"vacaciones · "+textoPlanBrutoComida(d),minutos:pag});
+        if(d.tipo==="baja" && pag>0) detalles.baja.push({fecha:fecha,texto:"baja · "+textoPlanBrutoComida(d),minutos:pag});
+        if(d.tipo==="festivo" && pag>0) detalles.festivo.push({fecha:fecha,texto:"festivo · "+textoPlanBrutoComida(d),minutos:pag});
+
+        if(cuentaTransporte(d,configNominaParaFecha(d.fecha))){
+            detalles.transporte.push({fecha:fecha,texto:d.teletrabajo ? "teletrabajo" : "transporte",minutos:0});
+        }
+    }
+
+    return detalles;
+}
+
+function htmlDetalle(lista,tipo){
+    if(!lista || lista.length===0){
+        return '<details class="detalleNomina"><summary>Ver desglose</summary><div class="small">Sin registros.</div></details>';
+    }
+
+    let lineas=lista.map(x=>{
+        let valor=tipo==="transporte" ? x.texto : formatMin(x.minutos);
+        return `<div class="lineaDetalle" onclick="abrirDia('${x.fecha}')">
+            <span>${x.fecha}<br><small>${x.texto}</small></span>
+            <span>${valor}</span>
+        </div>`;
+    }).join("");
+
+    return `<details class="detalleNomina"><summary>Ver desglose (${lista.length})</summary>${lineas}</details>`;
+}
+
+function renderNomina(){
+    let r=minutosPorTipoMes();
+    let detalles=detallesNominaMes();
+    let tarifa=tarifaHoraCalculadaParaConfig(configNominaParaFecha(fechaLocalStr(fechaNomina)));
+    let bruto=valorBrutoNominaMes();
+    let neto=netoEstimadoDesdeBruto(bruto);
+    let factor=factorNetoAutomatico(bruto);
+    let transporte=parseNumero(config.transporteDia);
+    let transporteValor=(!isNaN(transporte) ? transporte : 0) * r.transporteDias;
+
+    function valor(mins,multiplicador){
+        if(tarifa==null) return null;
+        return (mins/60)*tarifa*mult(multiplicador);
+    }
+
+    document.getElementById("nomHorasNormales").innerHTML=`
+        <div class="datoTitulo">HORAS NORMALES</div>
+        <div class="datoValor">${formatHoras(r.normal)}</div>
+        <div class="datoLinea">${formatEuro(valor(r.normal,config.multNormal))}</div>
+        ${htmlDetalle(detalles.normal,"horas")}
+    `;
+
+    document.getElementById("nomHorasVacaciones").innerHTML=`
+        <div class="datoTitulo">VACACIONES</div>
+        <div class="datoValor">${formatHoras(r.vacaciones)}</div>
+        <div class="datoLinea">${formatEuro(valor(r.vacaciones,config.multVacaciones))}</div>
+        ${htmlDetalle(detalles.vacaciones,"horas")}
+    `;
+
+    document.getElementById("nomHorasBaja").innerHTML=`
+        <div class="datoTitulo">BAJA</div>
+        <div class="datoValor">${formatHoras(r.baja)}</div>
+        <div class="datoLinea">${formatEuro(valor(r.baja,config.multBaja))}</div>
+        ${htmlDetalle(detalles.baja,"horas")}
+    `;
+
+    document.getElementById("nomHorasFestivo").innerHTML=`
+        <div class="datoTitulo">FESTIVO</div>
+        <div class="datoValor">${formatHoras(r.festivo)}</div>
+        <div class="datoLinea">${formatEuro(valor(r.festivo,config.multFestivo))}</div>
+        ${htmlDetalle(detalles.festivo,"horas")}
+    `;
+
+    document.getElementById("nomHorasExtra").innerHTML=`
+        <div class="datoTitulo">HORAS EXTRA</div>
+        <div class="datoValor">${formatHoras(r.extra)}</div>
+        <div class="datoLinea">${formatEuro(valor(r.extra,config.multExtra))}</div>
+        ${htmlDetalle(detalles.extra,"horas")}
+    `;
+
+    document.getElementById("nomTransporte").innerHTML=`
+        <div class="datoTitulo">TRANSPORTE</div>
+        <div class="datoValor">${r.transporteDias} días</div>
+        <div class="datoLinea">${formatEuro(transporteValor)}</div>
+        ${htmlDetalle(detalles.transporte,"transporte")}
+    `;
+
+    document.getElementById("nomBruto").innerHTML=`
+        <div class="datoTitulo">BRUTO ESTIMADO</div>
+        <div class="datoValor">${formatEuro(bruto)}</div>
+    `;
+
+    document.getElementById("nomNeto").innerHTML=`
+        <div class="datoTitulo">NETO ESTIMADO</div>
+        <div class="datoValor">${formatEuro(neto)}</div>
+    `;
+
+    document.getElementById("nomFactor").innerHTML=`
+        <div class="datoTitulo">FACTOR NETO FISCAL</div>
+        <div class="datoValor">${formatPorcentaje(factor)}</div>
+        <div class="datoLinea">Precio hora: ${tarifa==null ? "€ -" : formatEuro(tarifa)}</div>
+    `;
+
+    document.getElementById("nomPension").innerHTML=`
+        <div class="datoTitulo">PENSIÓN ESTIMADA</div>
+        <div class="datoValor">${formatEuro(pensionEstimacionMensual(bruto))}</div>
+        <div class="datoLinea">${config.pensionPct || 0}% aprox.</div>
+    `;
+
+    renderGraficos();
+}
+
+function renderGraficos(){
+    let graficoSaldo=document.getElementById("graficoSaldoDiario");
+    let graficoAcum=document.getElementById("graficoAcumulado");
+    if(!graficoSaldo || !graficoAcum) return;
+
+    let dias=datosMesActual();
+    let maxAbs=Math.max(30,...dias.map(x=>Math.abs(x.saldo)));
+
+    graficoSaldo.innerHTML="";
+    dias.forEach(x=>{
+        let bar=document.createElement("div");
+        let h=Math.max(4,Math.round(Math.abs(x.saldo)/maxAbs*120));
+        bar.className="barraDia "+(x.saldo>0 ? "barraPos" : x.saldo<0 ? "barraNeg" : "barraCero");
+        bar.style.height=h+"px";
+        bar.title=x.fecha+" | saldo "+formatMin(x.saldo);
+        bar.onclick=()=>abrirDia(x.fecha);
+        graficoSaldo.appendChild(bar);
+    });
+
+    let maxAcum=Math.max(30,...dias.map(x=>Math.abs(x.acumulado)));
+
+    graficoAcum.innerHTML="";
+    dias.forEach(x=>{
+        let p=document.createElement("div");
+        p.className="puntoAcumulado "+(x.acumulado>0 ? "barraPos" : x.acumulado<0 ? "barraNeg" : "barraCero");
+        let margen=Math.round((1-(x.acumulado+maxAcum)/(maxAcum*2))*90);
+        p.style.marginTop=Math.max(0,Math.min(90,margen))+"px";
+        p.title=x.fecha+" | acumulado "+formatMin(x.acumulado);
+        p.onclick=()=>abrirDia(x.fecha);
+        graficoAcum.appendChild(p);
+    });
+}
+
+function renderCalendario(){
     let cal=document.getElementById("calendar");
     cal.innerHTML="";
 
@@ -965,11 +2255,10 @@ function render(){
     let mes=fechaActual.getMonth();
     let año=fechaActual.getFullYear();
 
-    document.getElementById("mes").innerText=
-        fechaActual.toLocaleString("es",{month:"long",year:"numeric"});
+    document.getElementById("mes").innerText=fechaActual.toLocaleString("es",{month:"long",year:"numeric"});
 
     let primerDia=new Date(año,mes,1,12).getDay();
-    let offset=primerDia===0?6:primerDia-1;
+    let offset=primerDia===0 ? 6 : primerDia-1;
 
     for(let i=0;i<offset;i++){
         let empty=document.createElement("div");
@@ -992,35 +2281,219 @@ function render(){
         if(s>0) div.classList.add("positivo");
         if(s<0) div.classList.add("negativo");
         if(diaIncompleto(d)) div.classList.add("incompleto");
-        if(diaRaro(d)) div.classList.add("raro");
-        if(diaEstimado(d)) div.classList.add("estimado");
 
         if(!esLaborable(d) && d.tipo==="normal"){
             div.innerHTML=`
-                <strong>${i}</strong><br>
-                <span class="small">No laboral</span><br>
+                <strong>${i}</strong>
+                <div class="calTipo">No laboral</div>
                 <div class="saldo">-</div>
             `;
         } else {
             div.innerHTML=`
-                <strong>${i}</strong><br>
-                ${d.tipo!=="normal" ? d.tipo : ""}
-                ${diaEstimado(d) ? "⚠️" : ""}<br>
-                <span class="${d.entradaReal?'real':'plan'}">${entradaEfectiva(d)||""}</span>
-                -
-                <span class="${d.salidaReal?'real':'plan'}">${salidaEfectiva(d)||""}</span>
-                <div class="saldo">${formatMin(s)}</div>
+                <strong>${i}</strong>
+                <div class="calTipo">${d.tipo!=="normal" ? d.tipo : (diaEstimado(d) ? "⚠️" : "")}${d.teletrabajo ? " 🏠" : ""}</div>
+                <div class="calMiniHorario">
+                    <span class="${d.entradaReal?'real':'plan'}">${entradaEfectiva(d)||""}</span>–<span class="${d.salidaReal?'real':'plan'}">${salidaEfectiva(d)||""}</span>
+                </div>
+                <div class="saldo ${claseSaldoVisual(s)}">${formatMin(s)}</div>
             `;
         }
 
         div.onclick=()=>abrirDia(fecha);
         cal.appendChild(div);
     }
+}
 
-    resumenSemana();
-    resumenMes();
+
+function diasRevisionMes(){
+    let mes=fechaActual.getMonth();
+    let año=fechaActual.getFullYear();
+    let lista=[];
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        let d=obtenerDia(fecha,false);
+
+        let motivos=[];
+        if(diaIncompleto(d)) motivos.push("Incompleto");
+        if(d.tipo==="normal" && (d.entradaReal || d.salidaReal)) motivos.push("Corrección real");
+        if(d.tipo!=="normal") motivos.push(d.tipo);
+        if(d.nota && d.nota.trim()) motivos.push("Nota");
+        if(d.teletrabajo) motivos.push("Teletrabajo");
+
+        if(motivos.length>0){
+            lista.push({fecha,d,motivos});
+        }
+    }
+
+    return lista;
+}
+
+function renderRevision(){
+    let lista=diasRevisionMes();
+
+    let incompletos=lista.filter(x=>x.motivos.includes("Incompleto")).length;
+    let correcciones=lista.filter(x=>x.motivos.includes("Corrección real")).length;
+    let especiales=lista.filter(x=>x.d.tipo!=="normal").length;
+    let notas=lista.filter(x=>x.motivos.includes("Nota")).length;
+
+    let setCard=(id,titulo,valor,clase="")=>{
+        let el=document.getElementById(id);
+        if(!el) return;
+        el.innerHTML=`
+            <div class="datoTitulo">${titulo}</div>
+            <div class="datoValor ${clase}">${valor}</div>
+        `;
+    };
+
+    setCard("revIncompletosCard","INCOMPLETOS",incompletos,incompletos>0?"saldoNeg":"saldoCero");
+    setCard("revCorreccionesCard","CORRECCIONES",correcciones,"saldoCero");
+    setCard("revEspecialesCard","ESPECIALES",especiales,"saldoCero");
+    setCard("revNotasCard","NOTAS",notas,"saldoCero");
+
+    let cont=document.getElementById("listaRevision");
+    if(!cont) return;
+
+    if(lista.length===0){
+        cont.innerHTML=`<div class="small">No hay nada especial que revisar este mes.</div>`;
+        return;
+    }
+
+    cont.innerHTML="";
+    lista.forEach(x=>{
+        let div=document.createElement("div");
+        div.className="itemRevision";
+
+        let badges=x.motivos.map(m=>{
+            let cls=m==="Incompleto"?"badgeWarn":m==="Corrección real"?"badgeInfo":(m==="Nota"||m==="Teletrabajo")?"badgeOk":"badgeSpecial";
+            return `<span class="badge ${cls}">${m}</span>`;
+        }).join("");
+
+        div.innerHTML=`
+            <div class="itemTitulo">${x.fecha} ${badges}</div>
+            <div class="itemDetalle">
+                ${entradaEfectiva(x.d)||"-"} → ${salidaEfectiva(x.d)||"-"} · Saldo ${formatMin(saldo(x.d))}
+                ${x.d.nota ? "<br>Nota: "+x.d.nota : ""}
+            </div>
+        `;
+        div.onclick=()=>abrirDia(x.fecha);
+        cont.appendChild(div);
+    });
+}
+
+function render(){
+    document.getElementById("estado").innerHTML=estadoHoy();
 
     actualizarBotonesHoy();
+    renderCardsInicio();
+    renderCalendario();
+    resumenSemana();
+    resumenMes();
+    actualizarSelectorNomina();
+    renderNomina();
+    renderRevision();
+}
+
+function exportarJSON(){
+    let paquete={
+        version:"mis_horas_v30_no_pagado_por_dia",
+        fechaExportacion:new Date().toISOString(),
+        config,
+        historialNomina,
+        data
+    };
+
+    let blob=new Blob([JSON.stringify(paquete,null,2)],{type:"application/json"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="mis_horas_backup.json";
+    a.click();
+}
+
+function importarJSON(){
+    document.getElementById("fileInput").click();
+}
+
+document.getElementById("fileInput").addEventListener("change",function(e){
+    let file=e.target.files[0];
+    if(!file) return;
+
+    let reader=new FileReader();
+    reader.onload=function(){
+        try{
+            let importado=JSON.parse(reader.result);
+
+            if(Array.isArray(importado)){
+                data=importado;
+            } else if(importado.data && Array.isArray(importado.data)){
+                data=importado.data;
+                if(importado.config){
+                    config=importado.config;
+                    completarConfig();
+                }
+                if(importado.historialNomina && Array.isArray(importado.historialNomina)){
+                    historialNomina=importado.historialNomina;
+                    asegurarHistorialNomina();
+                }
+            } else {
+                return alert("Archivo inválido.");
+            }
+
+            guardar();
+            cargarConfigUI();
+            render();
+            alert("Backup importado correctamente.");
+        }catch{
+            alert("Error al cargar archivo.");
+        }
+    };
+
+    reader.readAsText(file);
+});
+
+function exportarCSV(){
+    let ordenado=[...data].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    let tarifa=tarifaHoraCalculada();
+
+    let filas=[
+        ["Fecha","Tipo","Teletrabajo","Entrada Plan","Salida Plan","No pagado min","Entrada Real","Salida Real","Objetivo min","Trabajado min","Pagado min","Saldo min","Objetivo","Trabajado","Pagado","Saldo","Valor pagado bruto €","Valor saldo €","Incompleto","Nota"]
+    ];
+
+    ordenado.forEach(d=>{
+        let pag=minutosPagadosDia(d);
+        let valPag=tarifa==null ? null : (pag/60)*tarifa;
+        let valSaldo=tarifa==null || saldo(d)==null ? null : (saldo(d)/60)*tarifa;
+
+        filas.push([
+            d.fecha,
+            d.tipo || "normal",
+            d.teletrabajo ? "Sí" : "No",
+            d.entradaPlan || "",
+            d.salidaPlan || "",
+            d.noPagadoPlan ?? 0,
+            d.entradaReal || "",
+            d.salidaReal || "",
+            objetivo(d) ?? "",
+            trabajado(d) ?? "",
+            pag,
+            saldo(d) ?? "",
+            formatMin(objetivo(d)),
+            formatMin(trabajado(d)),
+            formatMin(pag),
+            formatMin(saldo(d)),
+            valPag==null ? "" : valPag.toFixed(2),
+            valSaldo==null ? "" : valSaldo.toFixed(2),
+            diaEstimado(d) ? "Sí" : "No",
+            d.nota || ""
+        ]);
+    });
+
+    let csv=filas.map(f=>f.map(c=>`"${String(c).replaceAll('"','""')}"`).join(";")).join("\n");
+    let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="mis_horas.csv";
+    a.click();
 }
 
 cargarConfigUI();
