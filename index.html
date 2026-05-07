@@ -5,11 +5,7 @@
 <title>Mis Horas</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#111111">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mis Horas">
-<link rel="apple-touch-icon" href="icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 :root{
@@ -435,109 +431,14 @@ textarea:focus{
 .lineaDetalle span:last-child{ color:#f3f4f6; font-weight:700; text-align:right; }
 
 
-/* --- iPhone / mobile app framing --- */
-html{
-    background:#0d1117;
-    min-height:100%;
-    min-height:-webkit-fill-available;
-}
-body{
-    width:100%;
-    max-width:100%;
-    overflow-x:hidden;
-    padding-left:max(10px, env(safe-area-inset-left));
-    padding-right:max(10px, env(safe-area-inset-right));
-    padding-top:max(10px, env(safe-area-inset-top));
-    padding-bottom:max(16px, env(safe-area-inset-bottom));
-    min-height:-webkit-fill-available;
-    -webkit-tap-highlight-color:transparent;
-}
-.tabs{
-    left:0;
-    right:0;
-    margin-left:calc(-1 * max(10px, env(safe-area-inset-left)));
-    margin-right:calc(-1 * max(10px, env(safe-area-inset-right)));
-    padding-left:max(8px, env(safe-area-inset-left));
-    padding-right:max(8px, env(safe-area-inset-right));
-    overflow-x:auto;
-    justify-content:flex-start;
-    scrollbar-width:none;
-}
-.tabs::-webkit-scrollbar{ display:none; }
-.tabs button{
-    flex:0 0 auto;
-    white-space:nowrap;
-}
-.panel,.bloque,.top{
-    width:100%;
-    max-width:720px;
-}
-input,select,textarea{
-    font-size:16px;
-}
-button{
-    touch-action:manipulation;
-}
-@media(max-width:430px){
-    body{ padding-left:10px; padding-right:10px; }
-    h1{ font-size:24px; margin-top:6px; margin-bottom:10px; }
-    .tabs{ gap:6px; padding-top:8px; padding-bottom:8px; }
-    .tabs button{ font-size:12px; padding:9px 11px; }
-    .panel,.bloque,.top{ margin:10px auto; padding:13px; border-radius:16px; }
-    .cardsInicio{ grid-template-columns:1fr 1fr; gap:8px; }
-    #cardHoy{ grid-column:1 / -1; }
-    .datoCard{ padding:12px; border-radius:14px; }
-    .datoTitulo{ font-size:10px; }
-    .datoValor{ font-size:22px; line-height:1.1; }
-    #cardHoy .datoValor{ font-size:34px; }
-    .datoLinea{ font-size:12px; }
-    .accionesRapidas{ gap:7px; }
-    .accionesRapidas button{
-        width:100%;
-        min-width:0;
-        font-size:15px;
-        padding:13px 14px;
-    }
-    .calendar{
-        grid-template-columns:repeat(7,minmax(0,1fr));
-        gap:4px;
-        width:100%;
-        margin:14px auto;
-    }
-    .day{
-        min-width:0;
-        min-height:68px;
-        padding:6px 3px;
-        border-radius:10px;
-        font-size:10px;
-    }
-    .day strong{ font-size:13px; }
-    .day .saldo{ font-size:11px; overflow:hidden; text-overflow:ellipsis; }
-    .calMiniHorario{ font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .calTipo{ font-size:9px; min-height:11px; white-space:nowrap; overflow:hidden; }
-    #mes{ min-width:145px; font-size:14px; }
-    .jornadaGrid{
-        grid-template-columns:0.85fr 0.8fr 0.8fr 0.75fr 0.45fr;
-        gap:4px;
-    }
-    .jornadaDia{ font-size:11px; }
-    .jornadaGrid .head{ font-size:9px; }
-    .jornadaGrid input{ font-size:12px; padding:7px 4px; }
-    .checkCompact input{ width:18px; height:18px; }
-    .graficoBarras,.graficoLinea{
-        justify-content:flex-start;
-        min-height:135px;
-    }
-    .barraDia{ width:9px; min-width:9px; }
-}
-@media(max-width:360px){
-    .tabs button{ font-size:11px; padding:8px 9px; }
-    .datoValor{ font-size:20px; }
-    #cardHoy .datoValor{ font-size:30px; }
-    .day{ min-height:62px; }
-    .jornadaGrid{
-        grid-template-columns:0.8fr 0.78fr 0.78fr 0.7fr 0.42fr;
-    }
+.redondeoInfo{
+    margin-top:6px;
+    padding:8px;
+    border-radius:12px;
+    background:rgba(59,130,246,0.10);
+    border:1px solid rgba(59,130,246,0.20);
+    font-size:12px;
+    color:#cbd5e1;
 }
 
 </style>
@@ -1089,6 +990,55 @@ function calcularMinutos(entrada,salida,fecha,noPagado=null){
     return total - descuentoNoPagado(fecha,total,noPagado);
 }
 
+
+function redondearEntradaEmpresa(hora){
+    if(!hora) return null;
+    let m=min(hora);
+    if(m==null) return null;
+    let bloque=Math.floor(m/30)*30;
+    let resto=m-bloque;
+    if(resto<=5) return bloque;
+    return bloque+30;
+}
+
+function redondearSalidaEmpresa(hora){
+    if(!hora) return null;
+    let m=min(hora);
+    if(m==null) return null;
+    let bloque=Math.floor(m/30)*30;
+    let resto=m-bloque;
+    if(resto>=25) return bloque+30;
+    return bloque;
+}
+
+function minToHora(m){
+    if(m==null || isNaN(m)) return "-";
+    m=((m%1440)+1440)%1440;
+    let h=Math.floor(m/60);
+    let mm=m%60;
+    return String(h).padStart(2,"0")+":"+String(mm).padStart(2,"0");
+}
+
+function entradaCalculo(d){
+    if(d.entradaReal) return minToHora(redondearEntradaEmpresa(d.entradaReal));
+    return d.entradaPlan || null;
+}
+
+function salidaCalculo(d){
+    if(d.salidaReal) return minToHora(redondearSalidaEmpresa(d.salidaReal));
+    return d.salidaPlan || null;
+}
+
+function entradaMostrarCalculo(d){
+    if(d.entradaReal) return `${d.entradaReal} → ${entradaCalculo(d)}`;
+    return entradaCalculo(d) || "-";
+}
+
+function salidaMostrarCalculo(d){
+    if(d.salidaReal) return `${d.salidaReal} → ${salidaCalculo(d)}`;
+    return salidaCalculo(d) || "-";
+}
+
 function esLaborable(d){
     if(d.tipo!=="normal") return false;
     return !!(d.entradaPlan || d.salidaPlan || d.entradaReal || d.salidaReal);
@@ -1098,8 +1048,8 @@ function trabajado(d){
     if(d.tipo!=="normal") return 0;
     if(!esLaborable(d)) return 0;
 
-    let e=entradaEfectiva(d);
-    let s=salidaEfectiva(d);
+    let e=entradaCalculo(d);
+    let s=salidaCalculo(d);
 
     if(!e || !s) return null;
 
@@ -1308,6 +1258,83 @@ function cambiarMesNomina(){
     render();
 }
 
+
+function lunesDeFecha(fecha){
+    let f=new Date(fecha+"T12:00:00");
+    let dia=f.getDay();
+    let diff=dia===0 ? -6 : 1-dia;
+    f.setDate(f.getDate()+diff);
+    f.setHours(12,0,0,0);
+    return f;
+}
+
+function claveSemana(fecha){
+    return fechaLocalStr(lunesDeFecha(fecha));
+}
+
+function diasDeSemana(lunesFecha){
+    let lunes=new Date(lunesFecha+"T12:00:00");
+    let arr=[];
+    for(let i=0;i<7;i++){
+        let f=new Date(lunes);
+        f.setDate(lunes.getDate()+i);
+        arr.push(fechaLocalStr(f));
+    }
+    return arr;
+}
+
+function resumenSemanaNomina(lunesFecha){
+    let normalTrabajado=0;
+    let normalObjetivo=0;
+
+    diasDeSemana(lunesFecha).forEach(fecha=>{
+        let d=obtenerDia(fecha,false);
+        if(d.tipo==="normal"){
+            let t=trabajado(d);
+            let o=objetivo(d);
+            if(t!=null) normalTrabajado+=t;
+            if(o!=null) normalObjetivo+=o;
+        }
+    });
+
+    return {
+        lunes:lunesFecha,
+        trabajado:normalTrabajado,
+        objetivo:normalObjetivo,
+        normalBase:Math.min(normalTrabajado,normalObjetivo),
+        extra:Math.max(0,normalTrabajado-normalObjetivo),
+        deficit:Math.max(0,normalObjetivo-normalTrabajado)
+    };
+}
+
+function semanasDelMesNomina(){
+    let mes=fechaNomina.getMonth();
+    let año=fechaNomina.getFullYear();
+    let set=new Set();
+
+    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
+        let fecha=fechaLocalStr(new Date(año,mes,i,12));
+        set.add(claveSemana(fecha));
+    }
+
+    return Array.from(set).sort();
+}
+
+function extrasSemanalesMes(){
+    let totalExtra=0;
+    let totalNormalBase=0;
+    let semanas=[];
+
+    semanasDelMesNomina().forEach(lunes=>{
+        let r=resumenSemanaNomina(lunes);
+        totalExtra+=r.extra;
+        totalNormalBase+=r.normalBase;
+        semanas.push(r);
+    });
+
+    return {totalExtra,totalNormalBase,semanas};
+}
+
 function minutosPorTipoMes(){
     let mes=fechaNomina.getMonth();
     let año=fechaNomina.getFullYear();
@@ -1321,27 +1348,18 @@ function minutosPorTipoMes(){
         transporteDias:0
     };
 
+    let semanal=extrasSemanalesMes();
+    r.normal=semanal.totalNormalBase;
+    r.extra=semanal.totalExtra;
+
     for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
         let fecha=fechaLocalStr(new Date(año,mes,i,12));
         let d=obtenerDia(fecha,false);
-        let obj=objetivo(d);
-        let trab=trabajado(d);
         let pag=minutosPagadosDia(d);
 
-        if(d.tipo==="normal"){
-            if(trab!=null){
-                let base=obj==null ? trab : Math.min(trab,obj);
-                let extra=obj==null ? 0 : Math.max(0,trab-obj);
-                r.normal+=base;
-                r.extra+=extra;
-            }
-        } else if(d.tipo==="vacaciones"){
-            r.vacaciones+=pag;
-        } else if(d.tipo==="baja"){
-            r.baja+=pag;
-        } else if(d.tipo==="festivo"){
-            r.festivo+=pag;
-        }
+        if(d.tipo==="vacaciones") r.vacaciones+=pag;
+        else if(d.tipo==="baja") r.baja+=pag;
+        else if(d.tipo==="festivo") r.festivo+=pag;
 
         if(cuentaTransporte(d)) r.transporteDias++;
     }
@@ -1396,14 +1414,21 @@ function valorBrutoDia(d){
 }
 
 function valorBrutoNominaMes(){
-    let mes=fechaNomina.getMonth();
-    let año=fechaNomina.getFullYear();
+    let tarifa=tarifaHoraCalculadaParaConfig(configNominaParaFecha(fechaLocalStr(fechaNomina)));
+    if(tarifa==null) return null;
+
+    let r=minutosPorTipoMes();
     let total=0;
 
-    for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
-        let fecha=fechaLocalStr(new Date(año,mes,i,12));
-        let d=obtenerDia(fecha,false);
-        total += valorBrutoDia(d);
+    total += (r.normal/60)*tarifa*mult(config.multNormal);
+    total += (r.vacaciones/60)*tarifa*mult(config.multVacaciones);
+    total += (r.baja/60)*tarifa*mult(config.multBaja);
+    total += (r.festivo/60)*tarifa*mult(config.multFestivo);
+    total += (r.extra/60)*tarifa*mult(config.multExtra);
+
+    let transporte=parseNumero(config.transporteDia);
+    if(!isNaN(transporte) && transporte>0){
+        total += r.transporteDias * transporte;
     }
 
     return total;
@@ -1833,8 +1858,12 @@ function abrirDia(fecha){
         </div>
 
         <br>
-        Bruto: ${formatMin(minutosBrutos(entradaEfectiva(d),salidaEfectiva(d)))}<br>
-        No pagado: ${descuentoNoPagado(d.fecha,minutosBrutos(entradaEfectiva(d),salidaEfectiva(d)) || 0,d.noPagadoPlan)} min<br>
+        Bruto redondeado: ${formatMin(minutosBrutos(entradaCalculo(d),salidaCalculo(d)))}<br>
+        No pagado: ${descuentoNoPagado(d.fecha,minutosBrutos(entradaCalculo(d),salidaCalculo(d)) || 0,d.noPagadoPlan)} min<br>
+        <div class="redondeoInfo">
+            Entrada cálculo: ${entradaMostrarCalculo(d)}<br>
+            Salida cálculo: ${salidaMostrarCalculo(d)}
+        </div>
         Objetivo neto: ${formatMin(objetivo(d))}<br>
         Trabajado/Pagado neto: ${formatMin(minutosPagadosDia(d))}<br>
         Saldo: ${formatMin(saldo(d))}<br>
@@ -2077,25 +2106,27 @@ function detallesNominaMes(){
         transporte:[]
     };
 
+    extrasSemanalesMes().semanas.forEach(s=>{
+        if(s.normalBase>0){
+            detalles.normal.push({
+                fecha:s.lunes,
+                texto:`Semana ${s.lunes} · trabajado ${formatMin(s.trabajado)} · plan ${formatMin(s.objetivo)}`,
+                minutos:s.normalBase
+            });
+        }
+        if(s.extra>0){
+            detalles.extra.push({
+                fecha:s.lunes,
+                texto:`Semana ${s.lunes} · trabajado ${formatMin(s.trabajado)} · plan ${formatMin(s.objetivo)}`,
+                minutos:s.extra
+            });
+        }
+    });
+
     for(let i=1;i<=new Date(año,mes+1,0).getDate();i++){
         let fecha=fechaLocalStr(new Date(año,mes,i,12));
         let d=obtenerDia(fecha,false);
-        let obj=objetivo(d);
-        let trab=trabajado(d);
         let pag=minutosPagadosDia(d);
-
-        if(d.tipo==="normal" && trab!=null && trab>0){
-            let base=obj==null ? trab : Math.min(trab,obj);
-            let extra=obj==null ? 0 : Math.max(0,trab-obj);
-
-            if(base>0){
-                detalles.normal.push({fecha:fecha,texto:(entradaEfectiva(d)||"-")+"–"+(salidaEfectiva(d)||"-")+" · "+textoBrutoComida(d),minutos:base});
-            }
-
-            if(extra>0){
-                detalles.extra.push({fecha:fecha,texto:"extra sobre objetivo "+formatMin(obj),minutos:extra});
-            }
-        }
 
         if(d.tipo==="vacaciones" && pag>0) detalles.vacaciones.push({fecha:fecha,texto:"vacaciones · "+textoPlanBrutoComida(d),minutos:pag});
         if(d.tipo==="baja" && pag>0) detalles.baja.push({fecha:fecha,texto:"baja · "+textoPlanBrutoComida(d),minutos:pag});
@@ -2372,7 +2403,7 @@ function renderRevision(){
         div.innerHTML=`
             <div class="itemTitulo">${x.fecha} ${badges}</div>
             <div class="itemDetalle">
-                ${entradaEfectiva(x.d)||"-"} → ${salidaEfectiva(x.d)||"-"} · Saldo ${formatMin(saldo(x.d))}
+                ${entradaMostrarCalculo(x.d)} → ${salidaMostrarCalculo(x.d)} · Saldo ${formatMin(saldo(x.d))}
                 ${x.d.nota ? "<br>Nota: "+x.d.nota : ""}
             </div>
         `;
@@ -2396,7 +2427,7 @@ function render(){
 
 function exportarJSON(){
     let paquete={
-        version:"mis_horas_v30_no_pagado_por_dia",
+        version:"mis_horas_v31_redondeo_extras_semanales",
         fechaExportacion:new Date().toISOString(),
         config,
         historialNomina,
@@ -2456,7 +2487,7 @@ function exportarCSV(){
     let tarifa=tarifaHoraCalculada();
 
     let filas=[
-        ["Fecha","Tipo","Teletrabajo","Entrada Plan","Salida Plan","No pagado min","Entrada Real","Salida Real","Objetivo min","Trabajado min","Pagado min","Saldo min","Objetivo","Trabajado","Pagado","Saldo","Valor pagado bruto €","Valor saldo €","Incompleto","Nota"]
+        ["Fecha","Tipo","Teletrabajo","Entrada Plan","Salida Plan","No pagado min","Entrada Real","Salida Real","Entrada cálculo","Salida cálculo","Objetivo min","Trabajado min","Pagado min","Saldo min","Objetivo","Trabajado","Pagado","Saldo","Valor pagado bruto €","Valor saldo €","Incompleto","Nota"]
     ];
 
     ordenado.forEach(d=>{
@@ -2473,6 +2504,8 @@ function exportarCSV(){
             d.noPagadoPlan ?? 0,
             d.entradaReal || "",
             d.salidaReal || "",
+            entradaCalculo(d) || "",
+            salidaCalculo(d) || "",
             objetivo(d) ?? "",
             trabajado(d) ?? "",
             pag,
